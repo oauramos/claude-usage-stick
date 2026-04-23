@@ -1,6 +1,6 @@
 #include "ui.h"
 #include "config.h"
-#include <M5StickCPlus.h>
+#include "hal.h"
 #include <time.h>
 
 // ── Colors (RGB565) ──────────────────────────────────────
@@ -20,21 +20,21 @@ static uint16_t barColor(float) {
 }
 
 static void drawBar(int x, int y, int w, int h, float pct, const char* label) {
-    M5.Lcd.setTextColor(C_TEXT, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(x, y);
-    M5.Lcd.print(label);
+    lcd.setTextColor(C_TEXT, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(x, y);
+    lcd.print(label);
 
     char ps[8];
     snprintf(ps, sizeof(ps), "%.0f%%", pct);
-    M5.Lcd.setCursor(x + w - strlen(ps) * 6, y);
-    M5.Lcd.setTextColor(barColor(pct), C_BG);
-    M5.Lcd.print(ps);
+    lcd.setCursor(x + w - strlen(ps) * 6, y);
+    lcd.setTextColor(barColor(pct), C_BG);
+    lcd.print(ps);
 
     int by = y + 12;
-    M5.Lcd.fillRect(x, by, w, h, C_BAR_BG);
+    lcd.fillRect(x, by, w, h, C_BAR_BG);
     int fw = constrain((int)(w * pct / 100.0f), 0, w);
-    if (fw > 0) M5.Lcd.fillRect(x, by, fw, h, barColor(pct));
+    if (fw > 0) lcd.fillRect(x, by, fw, h, barColor(pct));
 }
 
 static void fmtCountdown(uint32_t epoch, char* out, size_t len) {
@@ -58,80 +58,80 @@ static void fmtCountdown(uint32_t epoch, char* out, size_t len) {
 }
 
 void uiInit() {
-    M5.Lcd.setRotation(3);
-    M5.Lcd.fillScreen(C_BG);
+    lcd.setRotation(SCREEN_ROT);
+    lcd.fillScreen(C_BG);
 }
 
 void uiBootProgress(int percent, const char* label) {
-    M5.Lcd.fillScreen(C_BG);
+    lcd.fillScreen(C_BG);
 
-    M5.Lcd.setTextColor(C_ACCENT, C_BG);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(30, 20);
-    M5.Lcd.print("Claude Usage");
+    lcd.setTextColor(C_ACCENT, C_BG);
+    lcd.setTextSize(2);
+    lcd.setCursor(30, 20);
+    lcd.print("Claude Usage");
 
-    int bx = 20, by = 60, bw = 200, bh = 14;
-    M5.Lcd.fillRect(bx, by, bw, bh, C_BAR_BG);
+    int bx = 20, by = 60, bw = SCREEN_W - 40, bh = 14;
+    lcd.fillRect(bx, by, bw, bh, C_BAR_BG);
     int fill = constrain((int)(bw * percent / 100.0f), 0, bw);
-    M5.Lcd.fillRect(bx, by, fill, bh, C_ACCENT);
+    lcd.fillRect(bx, by, fill, bh, C_ACCENT);
 
     char ps[8];
     snprintf(ps, sizeof(ps), "%d%%", percent);
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(bx + bw / 2 - strlen(ps) * 3, by + bh + 6);
-    M5.Lcd.print(ps);
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(bx + bw / 2 - strlen(ps) * 3, by + bh + 6);
+    lcd.print(ps);
 
-    M5.Lcd.setCursor(20, 100);
-    M5.Lcd.print(label);
+    lcd.setCursor(20, 100);
+    lcd.print(label);
 }
 
 void uiSetupScreen(const char* apName, const char* apPass) {
-    M5.Lcd.fillScreen(C_BG);
+    lcd.fillScreen(C_BG);
 
-    M5.Lcd.fillRect(0, 0, SCREEN_W, 18, C_ACCENT);
-    M5.Lcd.setTextColor(C_BG, C_ACCENT);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(6, 5);
-    M5.Lcd.print("SETUP MODE");
+    lcd.fillRect(0, 0, SCREEN_W, 18, C_ACCENT);
+    lcd.setTextColor(C_TEXT, C_ACCENT);
+    lcd.setTextSize(1);
+    lcd.setCursor(6, 5);
+    lcd.print("SETUP MODE");
 
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(10, 24);
-    M5.Lcd.print("1. Connect to WiFi:");
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(10, 24);
+    lcd.print("1. Connect to WiFi:");
 
-    M5.Lcd.setTextColor(C_CYAN, C_BG);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(10, 36);
-    M5.Lcd.print(apName);
+    lcd.setTextColor(C_CYAN, C_BG);
+    lcd.setTextSize(2);
+    lcd.setCursor(10, 36);
+    lcd.print(apName);
 
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(10, 56);
-    M5.Lcd.print("Password:");
-    M5.Lcd.setTextColor(C_TEXT, C_BG);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(70, 56);
-    M5.Lcd.print(apPass);
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(10, 56);
+    lcd.print("Password:");
+    lcd.setTextColor(C_CYAN, C_BG);
+    lcd.setTextSize(2);
+    lcd.setCursor(10, 68);
+    lcd.print(apPass);
 
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(10, 80);
-    M5.Lcd.print("2. Open in browser:");
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(10, 92);
+    lcd.print("2. Open in browser:");
 
-    M5.Lcd.setTextColor(C_CYAN, C_BG);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(10, 92);
-    M5.Lcd.print("192.168.4.1");
+    lcd.setTextColor(C_CYAN, C_BG);
+    lcd.setTextSize(2);
+    lcd.setCursor(10, 104);
+    lcd.print("192.168.4.1");
 }
 
 void uiPinScreen(int pos, const int digits[4]) {
-    M5.Lcd.fillScreen(C_BG);
+    lcd.fillScreen(C_BG);
 
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(70, 15);
-    M5.Lcd.print("UNLOCK PIN");
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(70, 15);
+    lcd.print("UNLOCK PIN");
 
     int boxW = 30, boxH = 36, gap = 12;
     int startX = (SCREEN_W - (4 * boxW + 3 * gap)) / 2;
@@ -141,148 +141,149 @@ void uiPinScreen(int pos, const int digits[4]) {
         int x = startX + i * (boxW + gap);
         uint16_t borderCol = (i == pos) ? C_CYAN : C_DIM;
 
-        M5.Lcd.drawRect(x, boxY, boxW, boxH, borderCol);
-        if (i == pos) M5.Lcd.drawRect(x + 1, boxY + 1, boxW - 2, boxH - 2, borderCol);
+        lcd.drawRect(x, boxY, boxW, boxH, borderCol);
+        if (i == pos) lcd.drawRect(x + 1, boxY + 1, boxW - 2, boxH - 2, borderCol);
 
-        M5.Lcd.setTextSize(3);
+        lcd.setTextSize(3);
         if (i < pos) {
-            M5.Lcd.setTextColor(C_ACCENT, C_BG);
-            M5.Lcd.setCursor(x + 9, boxY + 7);
-            M5.Lcd.print("*");
+            lcd.setTextColor(C_ACCENT, C_BG);
+            lcd.setCursor(x + 9, boxY + 7);
+            lcd.print("*");
         } else if (i == pos) {
-            M5.Lcd.setTextColor(C_TEXT, C_BG);
-            M5.Lcd.setCursor(x + 9, boxY + 7);
-            M5.Lcd.print(digits[i]);
+            lcd.setTextColor(C_TEXT, C_BG);
+            lcd.setCursor(x + 9, boxY + 7);
+            lcd.print(digits[i]);
         }
     }
 
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(20, 95);
-    M5.Lcd.print("[A] cycle digit");
-    M5.Lcd.setCursor(148, 95);
-    M5.Lcd.print("[B] confirm");
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(20, 95);
+    lcd.print("[A] cycle digit");
+    lcd.setCursor(148, 95);
+    lcd.print("[B] confirm");
 
-    M5.Lcd.setCursor(35, 118);
-    M5.Lcd.setTextColor(0x4A49, C_BG);
-    M5.Lcd.print("Hold A+B on boot = factory reset");
+    lcd.setCursor(35, 118);
+    lcd.setTextColor(0x4A49, C_BG);
+    lcd.print("Hold A+B on boot = factory reset");
 }
 
 void uiConnecting(const char* ssid, int attempt) {
-    M5.Lcd.fillScreen(C_BG);
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(10, 40);
-    M5.Lcd.print("Connecting to WiFi...");
+    lcd.fillScreen(C_BG);
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(10, 40);
+    lcd.print("Connecting to WiFi...");
 
-    M5.Lcd.setTextColor(C_TEXT, C_BG);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(10, 58);
-    M5.Lcd.print(ssid);
+    lcd.setTextColor(C_TEXT, C_BG);
+    lcd.setTextSize(2);
+    lcd.setCursor(10, 58);
+    lcd.print(ssid);
 
     if (attempt > 0) {
-        M5.Lcd.setTextColor(C_DIM, C_BG);
-        M5.Lcd.setTextSize(1);
-        M5.Lcd.setCursor(10, 90);
-        M5.Lcd.printf("Attempt %d", attempt);
+        lcd.setTextColor(C_DIM, C_BG);
+        lcd.setTextSize(1);
+        lcd.setCursor(10, 90);
+        lcd.printf("Attempt %d", attempt);
     }
 }
 
 void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int batPct) {
-    M5.Lcd.fillScreen(C_BG);
+    lcd.fillScreen(C_BG);
 
     // Header
-    M5.Lcd.fillRect(0, 0, SCREEN_W, 18, C_HEAD);
-    M5.Lcd.setTextColor(C_TEXT, C_HEAD);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(4, 5);
-    M5.Lcd.print("CLAUDE USAGE");
+    lcd.fillRect(0, 0, SCREEN_W, 18, C_HEAD);
+    lcd.setTextColor(C_TEXT, C_HEAD);
+    lcd.setTextSize(1);
+    lcd.setCursor(4, 5);
+    lcd.print("CLAUDE USAGE");
 
     unsigned long ago = (millis() - lastFetchMs) / 1000;
     char hdr[32];
     snprintf(hdr, sizeof(hdr), "%ddBm %lus", rssi, ago);
-    M5.Lcd.setCursor(SCREEN_W - strlen(hdr) * 6 - 4, 5);
-    M5.Lcd.print(hdr);
+    lcd.setCursor(SCREEN_W - strlen(hdr) * 6 - 4, 5);
+    lcd.print(hdr);
 
     if (!data.ok) {
-        M5.Lcd.setTextColor(C_CRIT, C_BG);
-        M5.Lcd.setTextSize(2);
-        M5.Lcd.setCursor(10, 35);
-        M5.Lcd.print("ERROR");
-        M5.Lcd.setTextSize(1);
-        M5.Lcd.setTextColor(C_DIM, C_BG);
-        M5.Lcd.setCursor(10, 60);
-        M5.Lcd.print(data.error);
-        M5.Lcd.setCursor(10, 80);
-        M5.Lcd.print("[B] retry now");
+        lcd.setTextColor(C_CRIT, C_BG);
+        lcd.setTextSize(2);
+        lcd.setCursor(10, 35);
+        lcd.print("ERROR");
+        lcd.setTextSize(1);
+        lcd.setTextColor(C_DIM, C_BG);
+        lcd.setCursor(10, 60);
+        lcd.print(data.error);
+        lcd.setCursor(10, 80);
+        lcd.print("[B] retry now");
         return;
     }
 
-    drawBar(10, 24, 220, 10, data.h5, "5-HOUR WINDOW");
-    drawBar(10, 52, 220, 10, data.d7, "7-DAY WINDOW");
+    int barW = SCREEN_W - 20;
+    drawBar(10, 24, barW, 10, data.h5, "5-HOUR WINDOW");
+    drawBar(10, 52, barW, 10, data.d7, "7-DAY WINDOW");
 
     char h5rst[16], d7rst[16];
     fmtCountdown(data.h5ResetEpoch, h5rst, sizeof(h5rst));
     fmtCountdown(data.d7ResetEpoch, d7rst, sizeof(d7rst));
 
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(10, 80);
-    M5.Lcd.print("5H RST");
-    M5.Lcd.setTextColor(C_TEXT, C_BG);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(10, 92);
-    M5.Lcd.print(h5rst);
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(10, 80);
+    lcd.print("5H RST");
+    lcd.setTextColor(C_TEXT, C_BG);
+    lcd.setTextSize(2);
+    lcd.setCursor(10, 92);
+    lcd.print(h5rst);
 
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(130, 80);
-    M5.Lcd.print("7D RST");
-    M5.Lcd.setTextColor(C_TEXT, C_BG);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(130, 92);
-    M5.Lcd.print(d7rst);
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(SCREEN_W / 2 + 10, 80);
+    lcd.print("7D RST");
+    lcd.setTextColor(C_TEXT, C_BG);
+    lcd.setTextSize(2);
+    lcd.setCursor(SCREEN_W / 2 + 10, 92);
+    lcd.print(d7rst);
 
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(SCREEN_W - 48, 120);
-    M5.Lcd.printf("BAT %d%%", batPct);
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(SCREEN_W - 48, 120);
+    lcd.printf("BAT %d%%", batPct);
 }
 
 void uiError(const char* title, const char* detail) {
-    M5.Lcd.fillScreen(C_BG);
-    M5.Lcd.setTextColor(C_CRIT, C_BG);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(10, 30);
-    M5.Lcd.print(title);
+    lcd.fillScreen(C_BG);
+    lcd.setTextColor(C_CRIT, C_BG);
+    lcd.setTextSize(2);
+    lcd.setCursor(10, 30);
+    lcd.print(title);
     if (detail) {
-        M5.Lcd.setTextColor(C_DIM, C_BG);
-        M5.Lcd.setTextSize(1);
-        M5.Lcd.setCursor(10, 60);
-        M5.Lcd.print(detail);
+        lcd.setTextColor(C_DIM, C_BG);
+        lcd.setTextSize(1);
+        lcd.setCursor(10, 60);
+        lcd.print(detail);
     }
 }
 
 void uiLockout(int attempts, int maxAttempts, int lockoutSec) {
-    M5.Lcd.fillScreen(C_BG);
-    M5.Lcd.setTextColor(C_CRIT, C_BG);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(10, 25);
-    M5.Lcd.print("WRONG PIN");
+    lcd.fillScreen(C_BG);
+    lcd.setTextColor(C_CRIT, C_BG);
+    lcd.setTextSize(2);
+    lcd.setCursor(10, 25);
+    lcd.print("WRONG PIN");
 
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(10, 55);
-    M5.Lcd.printf("Attempt %d of %d", attempts, maxAttempts);
-    M5.Lcd.setCursor(10, 75);
-    M5.Lcd.printf("Locked for %d seconds", lockoutSec);
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(1);
+    lcd.setCursor(10, 55);
+    lcd.printf("Attempt %d of %d", attempts, maxAttempts);
+    lcd.setCursor(10, 75);
+    lcd.printf("Locked for %d seconds", lockoutSec);
 
     for (int s = lockoutSec; s > 0; s--) {
-        M5.Lcd.fillRect(10, 95, 200, 20, C_BG);
-        M5.Lcd.setTextColor(C_WARN, C_BG);
-        M5.Lcd.setTextSize(2);
-        M5.Lcd.setCursor(10, 95);
-        M5.Lcd.printf("%ds", s);
+        lcd.fillRect(10, 95, 200, 20, C_BG);
+        lcd.setTextColor(C_WARN, C_BG);
+        lcd.setTextSize(2);
+        lcd.setCursor(10, 95);
+        lcd.printf("%ds", s);
         delay(1000);
     }
 }

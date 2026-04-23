@@ -11,8 +11,15 @@
 #define KDF_ROUNDS              10000
 
 // ── Display ──────────────────────────────────────────────
-#define SCREEN_W                240
-#define SCREEN_H                135
+#ifdef BOARD_TDISPLAY_S3
+  #define SCREEN_W              320
+  #define SCREEN_H              170
+  #define SCREEN_ROT            1
+#else
+  #define SCREEN_W              240
+  #define SCREEN_H              135
+  #define SCREEN_ROT            3
+#endif
 #define DEFAULT_BRIGHTNESS      2        // 0=off 1=dim 2=normal 3=bright
 
 // ── Network ──────────────────────────────────────────────

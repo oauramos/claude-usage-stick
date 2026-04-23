@@ -1,13 +1,13 @@
 /*
  * Claude Code Usage Monitor — Standalone WiFi
- * M5StickC Plus 1.1
+ * Supports: M5StickC Plus, LilyGo T-Display S3
  *
  * Button A: cycle digit (PIN) / cycle brightness (dashboard)
  * Button B: confirm digit (PIN) / force refresh (dashboard)
  * A+B held on boot: factory reset → wipe NVS → re-enter setup
  */
 
-#include <M5StickCPlus.h>
+#include "hal.h"
 #include <WiFi.h>
 #include <Preferences.h>
 #include "config.h"
@@ -22,12 +22,6 @@ static UsageData   usage;
 static unsigned long lastFetch = 0;
 static int         pollMs     = DEFAULT_POLL_SEC * 1000;
 static uint8_t     brightness = DEFAULT_BRIGHTNESS;
-static uint8_t     brightLevels[] = {0, 30, 80, 160};
-
-static int getBatPercent() {
-    float v = M5.Axp.GetBatVoltage();
-    return constrain((int)((v - 3.3f) / 0.85f * 100), 0, 100);
-}
 
 // ── PIN Entry (blocks until 4 digits confirmed) ────────
 static void enterPin(char* pinOut, int maxLen) {
@@ -37,9 +31,9 @@ static void enterPin(char* pinOut, int maxLen) {
     while (pos < 4) {
         uiPinScreen(pos, digits);
         while (true) {
-            M5.update();
-            if (M5.BtnA.wasPressed()) { digits[pos] = (digits[pos] + 1) % 10; break; }
-            if (M5.BtnB.wasPressed()) { pos++; break; }
+            halUpdate();
+            if (halBtnAWasPressed()) { digits[pos] = (digits[pos] + 1) % 10; break; }
+            if (halBtnBWasPressed()) { pos++; break; }
             delay(20);
         }
     }
@@ -77,12 +71,12 @@ static void refresh() {
     }
     fetchUsage(token, usage);
     lastFetch = millis();
-    uiDashboard(usage, lastFetch, WiFi.RSSI(), getBatPercent());
+    uiDashboard(usage, lastFetch, WiFi.RSSI(), halBatPercent());
 }
 
 // ── Setup ──────────────────────────────────────────────
 void setup() {
-    M5.begin();
+    halInit();
     uiInit();
 
     uiBootProgress(10, "Initializing...");
@@ -92,8 +86,8 @@ void setup() {
     delay(200);
 
     // Factory reset: hold A+B during boot
-    M5.update();
-    if (M5.BtnA.isPressed() && M5.BtnB.isPressed()) {
+    halUpdate();
+    if (halBtnAIsPressed() && halBtnBIsPressed()) {
         uiBootProgress(50, "Factory reset...");
         prefs.begin(NVS_NAMESPACE, false);
         prefs.clear();
@@ -141,7 +135,7 @@ void setup() {
     brightness = prefs.getInt("brightness", DEFAULT_BRIGHTNESS);
     prefs.end();
 
-    M5.Axp.ScreenBreath(brightLevels[brightness]);
+    halSetBrightness(brightness);
 
     uiBootProgress(60, "Enter PIN...");
     delay(300);
@@ -186,14 +180,14 @@ void setup() {
 
 // ── Loop ───────────────────────────────────────────────
 void loop() {
-    M5.update();
+    halUpdate();
 
-    if (M5.BtnA.wasPressed()) {
+    if (halBtnAWasPressed()) {
         brightness = (brightness + 1) % 4;
-        M5.Axp.ScreenBreath(brightLevels[brightness]);
+        halSetBrightness(brightness);
     }
 
-    if (M5.BtnB.wasPressed()) {
+    if (halBtnBWasPressed()) {
         refresh();
     }
 
@@ -203,7 +197,7 @@ void loop() {
 
     static unsigned long lastRedraw = 0;
     if (millis() - lastRedraw > 10000) {
-        uiDashboard(usage, lastFetch, WiFi.RSSI(), getBatPercent());
+        uiDashboard(usage, lastFetch, WiFi.RSSI(), halBatPercent());
         lastRedraw = millis();
     }
 

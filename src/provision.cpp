@@ -2,7 +2,7 @@
 #include "crypto.h"
 #include "ui.h"
 #include "config.h"
-#include <M5StickCPlus.h>
+#include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <DNSServer.h>
