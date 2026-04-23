@@ -185,9 +185,9 @@ static void handleNotFound() {
     webServer.send(302, "text/plain", "");
 }
 
-void runProvisioningPortal(const char* apName) {
+void runProvisioningPortal(const char* apName, const char* apPass) {
     WiFi.mode(WIFI_AP);
-    WiFi.softAP(apName);
+    WiFi.softAP(apName, apPass);
     delay(100);
 
     dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
@@ -197,7 +197,7 @@ void runProvisioningPortal(const char* apName) {
     webServer.onNotFound(handleNotFound);
     webServer.begin();
 
-    uiSetupScreen(apName);
+    uiSetupScreen(apName, apPass);
 
     while (true) {
         dnsServer.processNextRequest();

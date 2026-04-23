@@ -117,7 +117,14 @@ void setup() {
         char apName[24];
         snprintf(apName, sizeof(apName), "ClaudeMonitor-%02X%02X", mac[4], mac[5]);
 
-        runProvisioningPortal(apName);
+        static const char alphabet[] = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        uint8_t rnd[8];
+        esp_fill_random(rnd, sizeof(rnd));
+        char apPass[9];
+        for (int i = 0; i < 8; i++) apPass[i] = alphabet[rnd[i] % (sizeof(alphabet) - 1)];
+        apPass[8] = '\0';
+
+        runProvisioningPortal(apName, apPass);
         return;
     }
 

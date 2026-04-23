@@ -86,39 +86,43 @@ void uiBootProgress(int percent, const char* label) {
     M5.Lcd.print(label);
 }
 
-void uiSetupScreen(const char* apName) {
+void uiSetupScreen(const char* apName, const char* apPass) {
     M5.Lcd.fillScreen(C_BG);
 
-    M5.Lcd.fillRect(0, 0, SCREEN_W, 22, C_ACCENT);
+    M5.Lcd.fillRect(0, 0, SCREEN_W, 18, C_ACCENT);
     M5.Lcd.setTextColor(C_BG, C_ACCENT);
     M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(6, 7);
+    M5.Lcd.setCursor(6, 5);
     M5.Lcd.print("SETUP MODE");
 
     M5.Lcd.setTextColor(C_DIM, C_BG);
     M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(10, 32);
-    M5.Lcd.print("1. Connect your phone to:");
+    M5.Lcd.setCursor(10, 24);
+    M5.Lcd.print("1. Connect to WiFi:");
 
     M5.Lcd.setTextColor(C_CYAN, C_BG);
     M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(10, 48);
+    M5.Lcd.setCursor(10, 36);
     M5.Lcd.print(apName);
 
     M5.Lcd.setTextColor(C_DIM, C_BG);
     M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(10, 76);
+    M5.Lcd.setCursor(10, 56);
+    M5.Lcd.print("Password:");
+    M5.Lcd.setTextColor(C_TEXT, C_BG);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setCursor(70, 56);
+    M5.Lcd.print(apPass);
+
+    M5.Lcd.setTextColor(C_DIM, C_BG);
+    M5.Lcd.setTextSize(1);
+    M5.Lcd.setCursor(10, 80);
     M5.Lcd.print("2. Open in browser:");
 
     M5.Lcd.setTextColor(C_CYAN, C_BG);
     M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(10, 90);
+    M5.Lcd.setCursor(10, 92);
     M5.Lcd.print("192.168.4.1");
-
-    M5.Lcd.setTextColor(C_DIM, C_BG);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(10, 120);
-    M5.Lcd.print("No password required");
 }
 
 void uiPinScreen(int pos, const int digits[4]) {
