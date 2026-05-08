@@ -3,8 +3,8 @@
 
 #ifdef BOARD_ESP32C3_OLED
 
-// Button A: GPIO 3 (external tactile button, GND when pressed)
-// Button B: GPIO 7 (external tactile button, GND when pressed)
+// Button A: GPIO 3 (external button, active-HIGH — connect to 3.3 V when pressed)
+// Button B: GPIO 7 (external button, active-HIGH — connect to 3.3 V when pressed)
 // GPIO 9 (BO0) is a strapping pin — left for download mode only.
 #define BTN_A_PIN  3
 #define BTN_B_PIN  7
@@ -18,20 +18,22 @@ static bool prevA = false, prevB = false;
 static bool tapA  = false, tapB  = false;
 
 void halInit() {
-    Wire.begin(SDA_PIN, SCL_PIN, 400000);
+    // u8g2.begin() owns Wire init — do not call Wire.begin() first,
+    // as double-init locks up the ESP32 I2C driver.
     u8g2.begin();
     u8g2.setBusClock(400000);
     u8g2.setContrast(255);
 
-    pinMode(BTN_A_PIN, INPUT_PULLUP);
-    pinMode(BTN_B_PIN, INPUT_PULLUP);
+    // Buttons are active-HIGH: pressed = HIGH, idle = LOW → use PULLDOWN
+    pinMode(BTN_A_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_B_PIN, INPUT_PULLDOWN);
     pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, LOW);
+    digitalWrite(LED_PIN, HIGH); // active-LOW LED: HIGH = off
 }
 
 void halUpdate() {
-    bool a = !digitalRead(BTN_A_PIN);
-    bool b = !digitalRead(BTN_B_PIN);
+    bool a = digitalRead(BTN_A_PIN);
+    bool b = digitalRead(BTN_B_PIN);
     tapA = (a && !prevA);
     tapB = (b && !prevB);
     prevA = a;
@@ -40,18 +42,18 @@ void halUpdate() {
 
 bool halBtnAWasPressed() { bool r = tapA; tapA = false; return r; }
 bool halBtnBWasPressed() { bool r = tapB; tapB = false; return r; }
-bool halBtnAIsPressed()  { return !digitalRead(BTN_A_PIN); }
-bool halBtnBIsPressed()  { return !digitalRead(BTN_B_PIN); }
+bool halBtnAIsPressed()  { return prevA; }
+bool halBtnBIsPressed()  { return prevB; }
 
 int halBatPercent() { return -1; } // No battery monitoring on this board
 
 void halSetBrightness(uint8_t level) {
-    static const uint8_t contrasts[] = {0, 64, 160, 255};
+    // SSD1306 contrast change is imperceptible on this panel — just on/off
     if (level == 0) {
         u8g2.setPowerSave(1);
     } else {
         u8g2.setPowerSave(0);
-        u8g2.setContrast(contrasts[level]);
+        u8g2.setContrast(255);
     }
 }
 

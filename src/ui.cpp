@@ -25,13 +25,14 @@ static void fmtCountdown(uint32_t epoch, char* out, size_t len) {
 }
 
 // ════════════════════════════════════════════════════════════
-// OLED implementation — U8g2, SSD1306 128×64, visible 72×40
-// The 72×40 panel sits at offset (30,12) in the 128×64 buffer.
+// OLED implementation — U8g2, SSD1306 128×64 NONAME constructor
+// Physical 72×40 pixels are wired to buffer columns 30–101, rows 24–63.
+// OX/OY shift local (0,0)–(71,39) coords into that buffer window.
 // ════════════════════════════════════════════════════════════
 #ifdef BOARD_ESP32C3_OLED
 
-static const int OX = 30; // x offset of visible area in 128×64 buffer
-static const int OY = 12; // y offset of visible area in 128×64 buffer
+static const int OX = 30; // buffer column where visible area starts
+static const int OY = 24; // buffer row where visible area starts
 
 // Drawing helpers — all (x,y) in visible-area coords (0,0)=(top-left of 72×40)
 static void oledStr(int x, int y, const char* s)        { u8g2.drawStr(OX + x, OY + y, s); }
