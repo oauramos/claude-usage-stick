@@ -1,10 +1,15 @@
 /*
  * Claude Code Usage Monitor — Standalone WiFi
- * Supports: M5StickC Plus, M5StickC Plus2, LilyGo T-Display S3
+ * Supports: M5StickC Plus, M5StickC Plus2, LilyGo T-Display S3, ESP32-C3-OLED
  *
  * Button A: cycle digit (PIN) / cycle brightness (dashboard)
  * Button B: confirm digit (PIN) / force refresh (dashboard)
  * A+B held on boot: factory reset → wipe NVS → re-enter setup
+ *
+ * ESP32-C3-OLED wiring (both buttons external, active-LOW to GND):
+ *   Button A → GPIO 3     Button B → GPIO 7
+ *   SDA → GPIO 5          SCL → GPIO 6
+ *   GPIO 9 (BO0): download mode only — do NOT wire a button here
  */
 
 #include "hal.h"
@@ -85,16 +90,27 @@ void setup() {
     uiBootProgress(30, "Checking config...");
     delay(200);
 
-    // Factory reset: hold A+B during boot
+    // Factory reset: both buttons must be held continuously for 2 seconds.
+    // A single snapshot can mis-fire on boards where GPIOs float LOW briefly;
+    // repeated sampling over 2 s eliminates false triggers.
     halUpdate();
     if (halBtnAIsPressed() && halBtnBIsPressed()) {
-        uiBootProgress(50, "Factory reset...");
-        prefs.begin(NVS_NAMESPACE, false);
-        prefs.clear();
-        prefs.end();
-        uiError("NVS WIPED", "Rebooting in 2s...");
-        delay(2000);
-        ESP.restart();
+        uiBootProgress(40, "Hold A+B 2s...");
+        bool held = true;
+        for (int i = 0; i < 20 && held; i++) {
+            delay(100);
+            halUpdate();
+            if (!halBtnAIsPressed() || !halBtnBIsPressed()) held = false;
+        }
+        if (held) {
+            uiBootProgress(50, "Factory reset...");
+            prefs.begin(NVS_NAMESPACE, false);
+            prefs.clear();
+            prefs.end();
+            uiError("NVS WIPED", "Rebooting in 2s...");
+            delay(2000);
+            ESP.restart();
+        }
     }
 
     // Check provisioned
@@ -111,13 +127,18 @@ void setup() {
         char apName[24];
         snprintf(apName, sizeof(apName), "ClaudeMonitor-%02X%02X", mac[4], mac[5]);
 
+#ifdef BOARD_ESP32C3_OLED
+        // No readable display during setup — use open AP so password isn't needed
+        const char* apPass = "";
+        Serial.printf("[SETUP] AP: %s (open)\n", apName);
+#else
         static const char alphabet[] = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         uint8_t rnd[8];
         esp_fill_random(rnd, sizeof(rnd));
         char apPass[9];
         for (int i = 0; i < 8; i++) apPass[i] = alphabet[rnd[i] % (sizeof(alphabet) - 1)];
         apPass[8] = '\0';
-
+#endif
         runProvisioningPortal(apName, apPass);
         return;
     }
@@ -183,7 +204,11 @@ void loop() {
     halUpdate();
 
     if (halBtnAWasPressed()) {
+#ifdef BOARD_ESP32C3_OLED
+        brightness = (brightness + 1) % 2; // on/off only — contrast change imperceptible
+#else
         brightness = (brightness + 1) % 4;
+#endif
         halSetBrightness(brightness);
     }
 

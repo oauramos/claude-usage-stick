@@ -11,7 +11,11 @@
 #define KDF_ROUNDS              10000
 
 // ── Display ──────────────────────────────────────────────
-#ifdef BOARD_TDISPLAY_S3
+#ifdef BOARD_ESP32C3_OLED
+  #define SCREEN_W              72
+  #define SCREEN_H              40
+  // No SCREEN_ROT — U8g2 uses U8G2_R0
+#elif defined(BOARD_TDISPLAY_S3)
   #define SCREEN_W              320
   #define SCREEN_H              170
   #define SCREEN_ROT            1

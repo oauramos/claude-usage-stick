@@ -2,15 +2,20 @@
 
 A tiny standalone device that shows your [Claude Code](https://docs.anthropic.com/en/docs/claude-code) rate-limit usage in real time. Polls the Anthropic API and displays your 5-hour and 7-day usage windows, reset countdowns, signal strength, and battery level.
 
-Supports three boards:
+Supports four boards:
 - **M5StickC Plus** (ESP32-PICO, 240x135 LCD)
 - **M5StickC Plus2** (ESP32-PICO-V3-02, 240x135 LCD)
 - **LilyGo T-Display S3** (ESP32-S3, 320x170 LCD)
+- **ESP32-C3-OLED** (ESP32-C3, 0.42" 72x40 OLED) — breadboard-friendly; bring your own buttons
 
 <p align="center">
   <img src="docs/boot.jpg" width="260" alt="Boot screen">
   <img src="docs/pin.jpg" width="260" alt="PIN unlock">
   <img src="docs/dashboard.jpg" width="260" alt="Dashboard">
+</p>
+
+<p align="center">
+  <img src="docs/esp32-c3-oled.jpg" width="400" alt="ESP32-C3-OLED running Claude Usage Stick">
 </p>
 
 ## Features
@@ -31,8 +36,40 @@ Use one of these supported boards:
 | M5StickC Plus | ESP32-PICO | 1.14" 240x135 | 120 mAh | [m5stack.com](https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit) |
 | M5StickC Plus2 | ESP32-PICO-V3-02 | 1.14" 240x135 | 200 mAh | [m5stack.com](https://shop.m5stack.com/products/m5stickc-plus2-esp32-mini-iot-development-kit) |
 | LilyGo T-Display S3 | ESP32-S3 | 1.9" 320x170 | 1300 mAh | [lilygo.cc](https://lilygo.cc/products/t-display-s3) |
+| ESP32-C3-OLED | ESP32-C3 | 0.42" 72x40 OLED | external | [aliexpress.com](https://www.aliexpress.com/item/1005007929382296.html) |
 
 Plus any USB-C cable for flashing and power.
+
+### ESP32-C3-OLED wiring
+
+The ESP32-C3-OLED module has no built-in buttons, so you wire two externally. The firmware expects both inputs to be **active-HIGH** (HIGH = pressed, LOW = idle) with internal pull-downs enabled.
+
+| Signal | GPIO | Notes |
+| ------ | ---- | ----- |
+| Button A (cycle brightness / cycle digit) | GPIO 3 | active-HIGH |
+| Button B (force refresh / confirm digit) | GPIO 7 | active-HIGH |
+| I²C SDA | GPIO 5 | display (built-in) |
+| I²C SCL | GPIO 6 | display (built-in) |
+| Onboard LED | GPIO 8 | active-LOW (HIGH = off) |
+
+> **Do not wire anything to GPIO 9 (BOOT/BOOT0)** — it is a strapping pin used for download mode.
+
+#### Option A — tactile push-buttons
+
+Wire each button between the GPIO pin and 3.3 V. When the button is open the internal pull-down holds the pin LOW; pressing it pulls it HIGH.
+
+```
+3.3 V ──┤button├── GPIO 3   (Button A)
+3.3 V ──┤button├── GPIO 7   (Button B)
+```
+
+#### Option B — capacitive touch sensors
+
+Any module that outputs a logic-HIGH signal when touched works as a drop-in replacement (e.g. TTP223-based pads). Wire the sensor's output to the GPIO pin and its power pins to 3.3 V and GND. The signal polarity and pull-down behaviour are identical to Option A.
+
+<p align="center">
+  <img src="docs/esp32-c3-oled-touch-buttons.jpg" width="500" alt="ESP32-C3-OLED wired with capacitive touch sensors on GPIO 3 and GPIO 7">
+</p>
 
 ## How It Works
 
@@ -65,9 +102,13 @@ pio run -e m5stick-cplus -t uploadfs
 pio run -e m5stick-cplus2 -t upload
 pio run -e m5stick-cplus2 -t uploadfs
 
-# — or — LilyGo T-Display S3
+# LilyGo T-Display S3
 pio run -e tdisplay-s3 -t upload
 pio run -e tdisplay-s3 -t uploadfs
+
+# ESP32-C3-OLED
+pio run -e esp32c3-oled -t upload
+pio run -e esp32c3-oled -t uploadfs
 ```
 
 > **Apple Silicon note:** If `uploadfs` fails with "Bad CPU type", install Rosetta (`softwareupdate --install-rosetta`) or use the included Python fallback:
@@ -78,7 +119,9 @@ pio run -e tdisplay-s3 -t uploadfs
 ### Configure the device
 
 1. On first boot (or after factory reset), the device creates a WiFi access point named `ClaudeMonitor-XXXX`
-2. Connect your phone or laptop to that network using the password shown on the device screen
+2. Connect your phone or laptop to that network
+   - **LCD boards** — the password is shown on the device screen
+   - **ESP32-C3-OLED** — the AP is open (no password), since the OLED is too small to display one legibly
 3. Open `http://192.168.4.1` in a browser
 4. Fill in your WiFi credentials, OAuth token, and a 4–8 digit encryption PIN
 5. Hit **Save & Reboot** — the device encrypts the token, stores it, and connects to your WiFi
@@ -94,7 +137,7 @@ Once unlocked, the dashboard appears and auto-refreshes.
 
 | Button | Dashboard action |
 | ------ | ---------------- |
-| A | Cycle screen brightness (off → dim → normal → bright) |
+| A | Cycle screen brightness (off → dim → normal → bright); ESP32-C3-OLED: toggle on/off only |
 | B | Force an immediate refresh |
 | A+B held on boot | Factory reset (wipes all stored data) |
 

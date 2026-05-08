@@ -1,7 +1,63 @@
 #include "hal.h"
 #include <Arduino.h>
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef BOARD_ESP32C3_OLED
+
+// Button A: GPIO 3 (external button, active-HIGH — connect to 3.3 V when pressed)
+// Button B: GPIO 7 (external button, active-HIGH — connect to 3.3 V when pressed)
+// GPIO 9 (BO0) is a strapping pin — left for download mode only.
+#define BTN_A_PIN  3
+#define BTN_B_PIN  7
+#define LED_PIN    8   // Onboard blue LED
+#define SDA_PIN    5
+#define SCL_PIN    6
+
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, SCL_PIN, SDA_PIN);
+
+static bool prevA = false, prevB = false;
+static bool tapA  = false, tapB  = false;
+
+void halInit() {
+    // u8g2.begin() owns Wire init — do not call Wire.begin() first,
+    // as double-init locks up the ESP32 I2C driver.
+    u8g2.begin();
+    u8g2.setBusClock(400000);
+    u8g2.setContrast(255);
+
+    // Buttons are active-HIGH: pressed = HIGH, idle = LOW → use PULLDOWN
+    pinMode(BTN_A_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_B_PIN, INPUT_PULLDOWN);
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, HIGH); // active-LOW LED: HIGH = off
+}
+
+void halUpdate() {
+    bool a = digitalRead(BTN_A_PIN);
+    bool b = digitalRead(BTN_B_PIN);
+    tapA = (a && !prevA);
+    tapB = (b && !prevB);
+    prevA = a;
+    prevB = b;
+}
+
+bool halBtnAWasPressed() { bool r = tapA; tapA = false; return r; }
+bool halBtnBWasPressed() { bool r = tapB; tapB = false; return r; }
+bool halBtnAIsPressed()  { return prevA; }
+bool halBtnBIsPressed()  { return prevB; }
+
+int halBatPercent() { return -1; } // No battery monitoring on this board
+
+void halSetBrightness(uint8_t level) {
+    // SSD1306 contrast change is imperceptible on this panel — just on/off
+    if (level == 0) {
+        u8g2.setPowerSave(1);
+    } else {
+        u8g2.setPowerSave(0);
+        u8g2.setContrast(255);
+    }
+}
+
+#elif defined(BOARD_TDISPLAY_S3)
 
 TFT_eSPI lcd;
 
