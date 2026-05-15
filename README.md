@@ -2,10 +2,11 @@
 
 A tiny standalone device that shows your [Claude Code](https://docs.anthropic.com/en/docs/claude-code) rate-limit usage in real time. Polls the Anthropic API and displays your 5-hour and 7-day usage windows, reset countdowns, signal strength, and battery level.
 
-Supports three boards:
+Supports four boards:
 - **M5StickC Plus** (ESP32-PICO, 240x135 LCD)
 - **M5StickC Plus2** (ESP32-PICO-V3-02, 240x135 LCD)
 - **LilyGo T-Display S3** (ESP32-S3, 320x170 LCD)
+- **LilyGo T-Display S3 AMOLED** 1.91" (ESP32-S3, 240x536 RM67162 AMOLED — H712/H713/H705/H681/H717)
 
 <p align="center">
   <img src="docs/boot.jpg" width="260" alt="Boot screen">
@@ -30,7 +31,8 @@ Use one of these supported boards:
 | ----- | --- | ------- | ------- | --- |
 | M5StickC Plus | ESP32-PICO | 1.14" 240x135 | 120 mAh | [m5stack.com](https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit) |
 | M5StickC Plus2 | ESP32-PICO-V3-02 | 1.14" 240x135 | 200 mAh | [m5stack.com](https://shop.m5stack.com/products/m5stickc-plus2-esp32-mini-iot-development-kit) |
-| LilyGo T-Display S3 | ESP32-S3 | 1.9" 320x170 | 1300 mAh | [lilygo.cc](https://lilygo.cc/products/t-display-s3) |
+| LilyGo T-Display S3 | ESP32-S3 | 1.9" 320x170 LCD | 1300 mAh | [lilygo.cc](https://lilygo.cc/products/t-display-s3) |
+| LilyGo T-Display S3 AMOLED (1.91") | ESP32-S3 | 1.91" 240x536 AMOLED | varies | [lilygo.cc](https://lilygo.cc/products/t-display-s3-amoled) |
 
 Plus any USB-C cable for flashing and power.
 
@@ -65,10 +67,16 @@ pio run -e m5stick-cplus -t uploadfs
 pio run -e m5stick-cplus2 -t upload
 pio run -e m5stick-cplus2 -t uploadfs
 
-# — or — LilyGo T-Display S3
+# — or — LilyGo T-Display S3 (regular LCD variant)
 pio run -e tdisplay-s3 -t upload
 pio run -e tdisplay-s3 -t uploadfs
+
+# — or — LilyGo T-Display S3 AMOLED 1.91" (H712/H713/H705/H681/H717)
+pio run -e tdisplay-s3-amoled -t upload
+pio run -e tdisplay-s3-amoled -t uploadfs
 ```
+
+> **AMOLED note:** the panel variant is auto-detected at runtime by the LilyGo_AMOLED library, so a single `tdisplay-s3-amoled` build covers all 1.91" AMOLED revisions (touch and non-touch, V1.0/V2.0/Black Shell). On touch-equipped variants (H705/H681/H717), tapping the screen anywhere acts as Button B.
 
 > **Apple Silicon note:** If `uploadfs` fails with "Bad CPU type", install Rosetta (`softwareupdate --install-rosetta`) or use the included Python fallback:
 > ```bash

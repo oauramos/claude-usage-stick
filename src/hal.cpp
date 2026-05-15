@@ -51,6 +51,83 @@ void halSetBrightness(uint8_t level) {
     ledcWrite(0, vals[level]);
 }
 
+void halFlush() {}
+
+void halClear(uint16_t color) { lcd.fillScreen(color); }
+
+#elif defined(BOARD_TDISPLAY_S3_AMOLED)
+
+// LilyGo T-Display S3 AMOLED (1.91" RM67162) — H712/H713/H705/H681/H717.
+// Single physical button (GPIO0). Button B is mapped to a touch tap when the
+// touch controller is present (H705/H681/H717), and is otherwise unavailable.
+
+LilyGo_Class amoled;
+static TFT_eSPI _tftParent;
+TFT_eSprite    spr = TFT_eSprite(&_tftParent);
+
+#define BTN_A_PIN 0
+
+static bool prevA = false, prevB = false;
+static bool tapA = false, tapB = false;
+static bool hasTouch = false;
+
+void halInit() {
+    if (!amoled.begin()) {
+        Serial.println("AMOLED begin() failed");
+    }
+    amoled.setRotation(0);                  // landscape: 536 wide, 240 tall
+    spr.setColorDepth(16);
+    spr.createSprite(amoled.width(), amoled.height());
+    spr.setSwapBytes(true);
+    spr.fillSprite(TFT_BLACK);
+    amoled.pushColors(0, 0, amoled.width(), amoled.height(),
+                      (uint16_t *)spr.getPointer());
+    amoled.setBrightness(200);
+    hasTouch = amoled.hasTouch();
+    pinMode(BTN_A_PIN, INPUT_PULLUP);
+}
+
+void halUpdate() {
+    bool a = !digitalRead(BTN_A_PIN);
+    bool b = false;
+    if (hasTouch) {
+        b = amoled.isPressed();
+    }
+    tapA = (a && !prevA);
+    tapB = (b && !prevB);
+    prevA = a;
+    prevB = b;
+}
+
+bool halBtnAWasPressed() { bool r = tapA; tapA = false; return r; }
+bool halBtnBWasPressed() { bool r = tapB; tapB = false; return r; }
+bool halBtnAIsPressed()  { return !digitalRead(BTN_A_PIN); }
+bool halBtnBIsPressed()  { return hasTouch && amoled.isPressed(); }
+
+int halBatPercent() {
+    uint16_t mv = amoled.getBattVoltage();
+    if (mv == 0) return 100;                // USB only, no battery
+    float v = mv / 1000.0f;
+    return constrain((int)((v - 3.3f) / 0.85f * 100), 0, 100);
+}
+
+void halSetBrightness(uint8_t level) {
+    static const uint8_t vals[] = {0, 60, 160, 255};
+    amoled.setBrightness(vals[level]);
+}
+
+void halFlush() {
+    amoled.pushColors(0, 0, amoled.width(), amoled.height(),
+                      (uint16_t *)spr.getPointer());
+}
+
+void halClear(uint16_t color) {
+    uint32_t pixels = (uint32_t)amoled.width() * amoled.height();
+    uint16_t *buf = (uint16_t *)spr.getPointer();
+    if (!buf) return;
+    for (uint32_t i = 0; i < pixels; i++) buf[i] = color;
+}
+
 #elif defined(BOARD_M5STICK_C_PLUS2)
 
 #define HOLD_PIN 4
@@ -88,6 +165,10 @@ void halSetBrightness(uint8_t level) {
     M5.Display.setBrightness(vals[level]);
 }
 
+void halFlush() {}
+
+void halClear(uint16_t color) { lcd.fillScreen(color); }
+
 #else // M5StickC Plus
 
 void halInit() {
@@ -112,5 +193,9 @@ void halSetBrightness(uint8_t level) {
     static const uint8_t vals[] = {0, 30, 80, 160};
     M5.Axp.ScreenBreath(vals[level]);
 }
+
+void halFlush() {}
+
+void halClear(uint16_t color) { lcd.fillScreen(color); }
 
 #endif

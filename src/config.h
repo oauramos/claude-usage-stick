@@ -15,6 +15,10 @@
   #define SCREEN_W              320
   #define SCREEN_H              170
   #define SCREEN_ROT            1
+#elif defined(BOARD_TDISPLAY_S3_AMOLED)
+  #define SCREEN_W              536
+  #define SCREEN_H              240
+  #define SCREEN_ROT            0
 #else
   #define SCREEN_W              240
   #define SCREEN_H              135
