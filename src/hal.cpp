@@ -344,6 +344,44 @@ void halFlush() {}
 
 void halClear(uint16_t color) { lcd.fillScreen(color); }
 
+#elif defined(BOARD_GEEKMAGIC_SMALLTV)
+
+// GeekMagic SmallTV / GIF.TV (ESP8266 ESP-12F, 1.5" 240x240 ST7789 on the HSPI bus).
+// No buttons and no battery: the button HAL is stubbed (the boot PIN is entered over
+// the web instead — see runWebUnlock), and battery reads return -1. Backlight is PWM'd
+// with analogWrite() since the ESP8266 has no LEDC peripheral. Pins come from the
+// hardware reference doc — VERIFY against your PCB revision with a multimeter.
+TFT_eSPI lcd;
+
+#define BL_PIN 2   // GPIO2 PWM backlight (also a boot strapping pin — must be HIGH at boot)
+
+void halInit() {
+    lcd.init();
+    // Rotation is applied by uiInit() (SCREEN_ROT); color inversion comes from the
+    // TFT_INVERSION_ON build flag (stock firmware uses INVON).
+    pinMode(BL_PIN, OUTPUT);
+    analogWriteRange(255);
+    analogWrite(BL_PIN, 200);
+}
+
+void halUpdate() {}   // no buttons to sample
+
+bool halBtnAWasPressed() { return false; }
+bool halBtnBWasPressed() { return false; }
+bool halBtnAIsPressed()  { return false; }
+bool halBtnBIsPressed()  { return false; }
+
+int halBatPercent() { return -1; }   // USB-powered, no battery sense
+
+void halSetBrightness(uint8_t level) {
+    static const uint8_t vals[] = {0, 60, 160, 255};
+    analogWrite(BL_PIN, vals[level]);
+}
+
+void halFlush() {}
+
+void halClear(uint16_t color) { lcd.fillScreen(color); }
+
 #else // M5StickC Plus
 
 void halInit() {

@@ -1,8 +1,14 @@
 #include "api.h"
 #include "config.h"
 #include <Arduino.h>
-#include <WiFiClientSecure.h>
-#include <HTTPClient.h>
+#ifdef ESP8266
+  #include <ESP8266WiFi.h>
+  #include <WiFiClientSecureBearSSL.h>
+  #include <ESP8266HTTPClient.h>
+#else
+  #include <WiFiClientSecure.h>
+  #include <HTTPClient.h>
+#endif
 
 // GlobalSign Root CA — trust anchor for api.anthropic.com
 static const char* ROOT_CA = R"CA(
@@ -38,8 +44,19 @@ static const char* RL_HEADERS[] = {
 static const int RL_HEADER_COUNT = 4;
 
 bool fetchUsage(const char* token, UsageData& out) {
+#ifdef ESP8266
+    // ESP8266 BearSSL: ~40 KB free heap and the TLS RX buffer dominates it. 16 KB is
+    // the safe default for Cloudflare-fronted hosts (which usually don't negotiate
+    // MFLN); drop the RX size to 4096 to reclaim heap if your endpoint allows smaller
+    // fragments. Requires valid NTP time before the handshake (BearSSL checks cert dates).
+    static BearSSL::X509List ta(ROOT_CA);
+    BearSSL::WiFiClientSecure client;
+    client.setTrustAnchors(&ta);
+    client.setBufferSizes(16384, 512);
+#else
     WiFiClientSecure client;
     client.setCACert(ROOT_CA);
+#endif
 
     HTTPClient https;
     if (!https.begin(client, MESSAGES_ENDPOINT)) {

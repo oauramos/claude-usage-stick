@@ -13,13 +13,27 @@
  */
 
 #include "hal.h"
-#include <WiFi.h>
-#include <Preferences.h>
+#ifdef ESP8266
+  #include "compat_esp8266.h"   // ESP8266WiFi + Preferences shim + getMac6/fillRandom
+  #include "unlock.h"
+#else
+  #include <WiFi.h>
+  #include <Preferences.h>
+#endif
 #include "config.h"
 #include "crypto.h"
 #include "provision.h"
 #include "api.h"
 #include "ui.h"
+
+// Chip MAC + hardware RNG — ESP-IDF calls on ESP32, compat shims on ESP8266.
+#ifdef ESP8266
+static inline void chipMac(uint8_t* m)             { getMac6(m); }
+static inline void chipRandom(uint8_t* b, size_t n) { fillRandom(b, n); }
+#else
+static inline void chipMac(uint8_t* m)             { esp_efuse_mac_get_default(m); }
+static inline void chipRandom(uint8_t* b, size_t n) { esp_fill_random(b, n); }
+#endif
 
 static Preferences prefs;
 static char        token[256];
@@ -29,6 +43,8 @@ static int         pollMs     = DEFAULT_POLL_SEC * 1000;
 static uint8_t     brightness = DEFAULT_BRIGHTNESS;
 
 // ── PIN Entry (blocks until 4 digits confirmed) ────────
+// Button-driven; not used on button-less boards (ESP8266 GeekMagic unlocks over the web).
+#ifndef ESP8266
 static void enterPin(char* pinOut, int maxLen) {
     int digits[4] = {0, 0, 0, 0};
     int pos = 0;
@@ -44,6 +60,7 @@ static void enterPin(char* pinOut, int maxLen) {
     }
     snprintf(pinOut, maxLen, "%d%d%d%d", digits[0], digits[1], digits[2], digits[3]);
 }
+#endif
 
 // ── WiFi ───────────────────────────────────────────────
 static bool connectWiFi(const char* ssid, const char* pass) {
@@ -62,8 +79,15 @@ static bool connectWiFi(const char* ssid, const char* pass) {
 // ── Sync NTP for reset countdown display ───────────────
 static void syncTime() {
     configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+#ifdef ESP8266
+    // ESP8266 has no getLocalTime(); poll until SNTP sets the clock (or time out).
+    // Valid time is required before the first TLS handshake — BearSSL checks cert dates.
+    time_t now = time(nullptr);
+    for (int i = 0; i < 100 && now < 1700000000; i++) { delay(100); now = time(nullptr); }
+#else
     struct tm t;
     getLocalTime(&t, 5000);
+#endif
 }
 
 // ── Fetch + draw ───────────────────────────────────────
@@ -123,7 +147,7 @@ void setup() {
         delay(400);
 
         uint8_t mac[6];
-        esp_efuse_mac_get_default(mac);
+        chipMac(mac);
         char apName[24];
         snprintf(apName, sizeof(apName), "ClaudeMonitor-%02X%02X", mac[4], mac[5]);
 
@@ -134,7 +158,7 @@ void setup() {
 #else
         static const char alphabet[] = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         uint8_t rnd[8];
-        esp_fill_random(rnd, sizeof(rnd));
+        chipRandom(rnd, sizeof(rnd));
         char apPass[9];
         for (int i = 0; i < 8; i++) apPass[i] = alphabet[rnd[i] % (sizeof(alphabet) - 1)];
         apPass[8] = '\0';
@@ -158,6 +182,22 @@ void setup() {
 
     halSetBrightness(brightness);
 
+#ifdef ESP8266
+    // Button-less board: bring WiFi + time up first, then unlock the token via the web
+    // PIN page (the device shows the URL on its screen). WiFi creds aren't PIN-encrypted,
+    // so connecting before unlock is safe — and valid NTP time is needed for TLS anyway.
+    uiBootProgress(70, "Connecting WiFi...");
+    if (!connectWiFi(ssid.c_str(), pass.c_str())) {
+        uiError("WIFI FAILED", ssid.c_str());
+        delay(5000);
+        ESP.restart();
+    }
+
+    uiBootProgress(85, "Syncing time...");
+    syncTime();
+
+    runWebUnlock(blob, token, sizeof(token));   // blocks until the correct PIN decrypts
+#else
     uiBootProgress(60, "Enter PIN...");
     delay(300);
 
@@ -194,6 +234,7 @@ void setup() {
 
     uiBootProgress(90, "Syncing time...");
     syncTime();
+#endif
 
     uiBootProgress(95, "Fetching usage...");
     refresh();

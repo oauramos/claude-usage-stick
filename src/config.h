@@ -31,6 +31,10 @@
   #define SCREEN_W              240
   #define SCREEN_H              135
   #define SCREEN_ROT            3
+#elif defined(BOARD_GEEKMAGIC_SMALLTV)
+  #define SCREEN_W              240
+  #define SCREEN_H              240
+  #define SCREEN_ROT            2        // stock uses rotation 2 + INVON; verify on hardware
 #else
   #define SCREEN_W              240
   #define SCREEN_H              135

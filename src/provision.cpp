@@ -3,10 +3,14 @@
 #include "ui.h"
 #include "config.h"
 #include <Arduino.h>
-#include <WiFi.h>
-#include <WebServer.h>
+#ifdef ESP8266
+  #include "compat_esp8266.h"   // ESP8266WiFi + ESP8266WebServer (aliased WebServer) + Preferences shim
+#else
+  #include <WiFi.h>
+  #include <WebServer.h>
+  #include <Preferences.h>
+#endif
 #include <DNSServer.h>
-#include <Preferences.h>
 
 static WebServer  webServer(80);
 static DNSServer  dnsServer;

@@ -25,6 +25,9 @@
 #elif defined(BOARD_M5STICK_C_PLUS2)
   #include <M5Unified.h>
   #define lcd M5.Display
+#elif defined(BOARD_GEEKMAGIC_SMALLTV)
+  #include <TFT_eSPI.h>
+  extern TFT_eSPI lcd;
 #else
   #include <M5StickCPlus.h>
   #ifdef lcd

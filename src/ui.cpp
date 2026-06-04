@@ -388,6 +388,38 @@ void uiSetupScreen(const char* apName, const char* apPass) {
     halFlush();
 }
 
+// Boot-time unlock prompt for button-less boards (e.g. GeekMagic SmallTV): the device
+// is on WiFi and hosts a one-field PIN page; the user opens it in a browser.
+void uiUnlockScreen(const char* url, const char* ip) {
+    halClear(C_BG);
+
+    lcd.fillRect(0, 0, SCREEN_W, SY(18), C_ACCENT);
+    lcd.setTextColor(C_TEXT, C_ACCENT);
+    lcd.setTextSize(TS(1));
+    lcd.setCursor(SX(6), SY(5));
+    lcd.print("LOCKED");
+
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(TS(1));
+    lcd.setCursor(SX(10), SY(30));
+    lcd.print("Enter PIN in browser:");
+
+    lcd.setTextColor(C_CYAN, C_BG);
+    lcd.setTextSize(TS(2));
+    lcd.setCursor(SX(10), SY(44));
+    lcd.print(url);
+
+    lcd.setTextColor(C_DIM, C_BG);
+    lcd.setTextSize(TS(1));
+    lcd.setCursor(SX(10), SY(70));
+    lcd.print("or visit");
+    lcd.setTextColor(C_CYAN, C_BG);
+    lcd.setTextSize(TS(2));
+    lcd.setCursor(SX(10), SY(82));
+    lcd.print(ip);
+    halFlush();
+}
+
 void uiPinScreen(int pos, const int digits[4]) {
     halClear(C_BG);
 
