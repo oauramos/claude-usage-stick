@@ -862,12 +862,14 @@ void uiPinScreen(int pos, const int digits[4]) {
     g.print(note);
 
 #ifdef BOARD_TDISPLAY_S3
-    // WiFi is already up on this board, so the device's LAN address is known
-    // while it sits locked.
+    // WiFi and the panel are already up on this board — the PIN can be entered
+    // from a browser on the LAN instead of cycling digits on the buttons.
     if (s_netUrl[0]) {
+        char unlockLine[52];
+        snprintf(unlockLine, sizeof(unlockLine), "unlock: %s", s_netUrl);
         g.setTextColor(C_CYAN, C_BG);
-        g.setCursor((SCREEN_W - (int)strlen(s_netUrl) * 6) / 2, boxY + boxH + 48);
-        g.print(s_netUrl);
+        g.setCursor((SCREEN_W - (int)strlen(unlockLine) * 6) / 2, boxY + boxH + 48);
+        g.print(unlockLine);
     }
 #endif
 #else
