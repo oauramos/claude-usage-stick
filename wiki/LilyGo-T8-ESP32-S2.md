@@ -1,6 +1,6 @@
 # LilyGo T8 ESP32-S2
 
-Part of [Claude Usage Stick](../README.md). A bare-bones ESP32-S2 board with the same 1.14" ST7789 panel as the TTGO T-Display, wired over the broken-out FSPI pins. Verified on hardware — display, WiFi provisioning, the encrypted dashboard, and button input all work.
+Part of [Claude Usage Stick](Home). A bare-bones ESP32-S2 board with the same 1.14" ST7789 panel as the TTGO T-Display, wired over the broken-out FSPI pins. Verified on hardware — display, WiFi provisioning, the encrypted dashboard, and button input all work.
 
 ## Specs
 
@@ -16,6 +16,10 @@ Part of [Claude Usage Stick](../README.md). A bare-bones ESP32-S2 board with the
 | Buy | [aliexpress.com](https://s.click.aliexpress.com/e/_c2w1HnpJ) |
 
 ## Flash
+
+Easiest: open the **[web flasher](https://oauramos.github.io/claude-usage-stick/)** in Chrome or Edge, pick this board, and plug it in over USB-C.
+
+From source, with the [PlatformIO CLI](https://platformio.org/install/cli):
 
 ```bash
 pio run -e t8-s2 -t upload     # firmware
@@ -36,3 +40,7 @@ The board exposes only the onboard **BOOT** button (GPIO 0), so the two-button U
 - **No on-boot factory reset** — GPIO 0 is a strapping pin (holding it during reset enters download mode), so the "hold A+B on boot" combo is unavailable. Re-flash to wipe NVS.
 - **No battery readout** — there's no confirmed battery-sense ADC, so battery percentage isn't shown on the dashboard.
 - During setup, the WiFi AP password is shown on the device screen.
+
+---
+
+**LilyGo T8 ESP32 S2** · env `t8-s2` · [All boards](Supported-Boards) · [Flashing](Flashing) · [Setup and daily use](Setup-and-Daily-Use) · [Troubleshooting](Troubleshooting)

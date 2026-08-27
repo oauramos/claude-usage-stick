@@ -18,7 +18,9 @@
 ### New board port
 
 - [ ] 📸 Photo of the device **running this firmware** is attached above
-- [ ] `README.md` hardware table updated with this board (name, MCU, display, firmware version, PlatformIO env, buy link)
-- [ ] Board spec page added at `docs/<env>.md` (specs, flash commands, controls, quirks) — copy an existing page as a template
 - [ ] New `[env:...]` added to `platformio.ini`
-- [ ] (Optional, appreciated) photo added to the 📸 Gallery section in `README.md`
+- [ ] Board guide added at `wiki/<Board-Name>.md` (specs, flash commands, controls, quirks) — copy an existing page as a template
+- [ ] `wiki/Supported-Boards.md` table updated (name, MCU, display, firmware version, PlatformIO env, buy link)
+- [ ] `wiki/_Sidebar.md` links to the new guide
+- [ ] Board added to `BOARDS` and `BOARDS3D` in `web/src/build.py`, then `python3 web/src/build.py` re-run
+- [ ] Env added to the build matrix in `.github/workflows/pages.yml`

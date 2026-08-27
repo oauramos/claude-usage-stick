@@ -1,6 +1,6 @@
 # Elecrow CrowPanel Advance 3.5" HMI
 
-Part of [Claude Usage Stick](../README.md). The biggest screen in the lineup — a 3.5" 480×320 IPS HMI panel with capacitive touch and no physical buttons. Pin mapping comes from Elecrow's official LovyanGFX driver and is verified on hardware.
+Part of [Claude Usage Stick](Home). The biggest screen in the lineup — a 3.5" 480×320 IPS HMI panel with capacitive touch and no physical buttons. Pin mapping comes from Elecrow's official LovyanGFX driver and is verified on hardware.
 
 ## Specs
 
@@ -17,6 +17,10 @@ Part of [Claude Usage Stick](../README.md). The biggest screen in the lineup —
 | Buy | [aliexpress.com](https://s.click.aliexpress.com/e/_c4lDErmN) |
 
 ## Flash
+
+Easiest: open the **[web flasher](https://oauramos.github.io/claude-usage-stick/)** in Chrome or Edge, pick this board, and plug it in over USB-C.
+
+From source, with the [PlatformIO CLI](https://platformio.org/install/cli):
 
 ```bash
 pio run -e crowpanel-adv-35 -t upload     # firmware
@@ -38,3 +42,7 @@ There are no physical user buttons, so the two-button UX maps to halves of the t
 - **No battery readout** — battery percentage isn't shown on the dashboard.
 - The dashboard renders into a PSRAM sprite and is pushed in one transfer, so refreshes don't flicker on this slow SPI panel; the PIN/setup screens draw straight to the panel so touch input stays responsive.
 - During setup, the WiFi AP password is shown on the device screen.
+
+---
+
+**CrowPanel Advance 35** · env `crowpanel-adv-35` · [All boards](Supported-Boards) · [Flashing](Flashing) · [Setup and daily use](Setup-and-Daily-Use) · [Troubleshooting](Troubleshooting)
