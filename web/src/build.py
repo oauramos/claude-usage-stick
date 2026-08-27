@@ -294,9 +294,6 @@ def build():
     (web / "manifests").mkdir(parents=True, exist_ok=True)
 
     html = html.replace("<!-- HERO_3D -->", hero3d("assets/tds3-screen.png"))
-    for token, fname in [("%%BOOT%%", "assets/boot.jpg"), ("%%PIN%%", "assets/pin.jpg"),
-                         ("%%DASH%%", "assets/dashboard.jpg")]:
-        html = html.replace(token, fname)
 
     for mock, real in [(MOCK_ACTIONS, REAL_ACTIONS), (MOCK_NOTE_CSS, REAL_NOTE_CSS),
                        (MOCK_JS_REFS, REAL_JS_REFS), (MOCK_JS_SELECT, REAL_JS_SELECT),
