@@ -1,6 +1,6 @@
 # M5StickC Plus
 
-Part of [Claude Usage Stick](../README.md). The original board this project was built for — a finger-sized ESP32 stick with a built-in display, battery, and two buttons. Zero soldering required.
+Part of [Claude Usage Stick](Home). The original board this project was built for — a finger-sized ESP32 stick with a built-in display, battery, and two buttons. Zero soldering required.
 
 ## Specs
 
@@ -15,6 +15,10 @@ Part of [Claude Usage Stick](../README.md). The original board this project was 
 | Buy | [aliexpress.com](https://s.click.aliexpress.com/e/_c3w3hHWl) |
 
 ## Flash
+
+Easiest: open the **[web flasher](https://oauramos.github.io/claude-usage-stick/)** in Chrome or Edge, pick this board, and plug it in over USB-C.
+
+From source, with the [PlatformIO CLI](https://platformio.org/install/cli):
 
 ```bash
 pio run -e m5stick-cplus -t upload     # firmware
@@ -33,5 +37,9 @@ Refresh happens automatically on the poll interval — Mango has no manual-refre
 
 ## Notes
 
-- As the **tier S** reference board, the dashboard's MODELS section shows one overall-health Clawd mascot plus a 2×2 `NAME UP/DOWN` text grid — see [Display tiers](../README.md#display-tiers).
+- As the **tier S** reference board, the dashboard's MODELS section shows one overall-health Clawd mascot plus a 2×2 `NAME UP/DOWN` text grid — see [Display tiers](The-UI#display-tiers).
 - During setup, the WiFi AP password is shown on the device screen.
+
+---
+
+**M5StickC Plus** · env `m5stick-cplus` · [All boards](Supported-Boards) · [Flashing](Flashing) · [Setup and daily use](Setup-and-Daily-Use) · [Troubleshooting](Troubleshooting)

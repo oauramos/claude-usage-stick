@@ -1,6 +1,6 @@
 # TTGO T-Display ESP32
 
-Part of [Claude Usage Stick](../README.md). The classic LilyGo/TTGO T-Display — an original ESP32 with a 1.14" ST7789 panel over 4-wire SPI and two front buttons.
+Part of [Claude Usage Stick](Home). The classic LilyGo/TTGO T-Display — an original ESP32 with a 1.14" ST7789 panel over 4-wire SPI and two front buttons.
 
 ## Specs
 
@@ -15,6 +15,10 @@ Part of [Claude Usage Stick](../README.md). The classic LilyGo/TTGO T-Display �
 | Buy | [aliexpress.com](https://s.click.aliexpress.com/e/_c32HlGQ1) |
 
 ## Flash
+
+Easiest: open the **[web flasher](https://oauramos.github.io/claude-usage-stick/)** in Chrome or Edge, pick this board, and plug it in over USB-C.
+
+From source, with the [PlatformIO CLI](https://platformio.org/install/cli):
 
 ```bash
 pio run -e tdisplay-esp32 -t upload     # firmware
@@ -33,3 +37,7 @@ pio run -e tdisplay-esp32 -t uploadfs   # web setup UI (SPIFFS)
 
 - Runs the original **Clarity** dashboard until it's migrated to the Mango tier S layout.
 - During setup, the WiFi AP password is shown on the device screen.
+
+---
+
+**TTGO T Display ESP32** · env `tdisplay-esp32` · [All boards](Supported-Boards) · [Flashing](Flashing) · [Setup and daily use](Setup-and-Daily-Use) · [Troubleshooting](Troubleshooting)
