@@ -1,0 +1,102 @@
+name: Build firmware & deploy web flasher
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - m5stick-cplus
+          - m5stick-cplus2
+          - tdisplay-s3
+          - t8-s2
+          - crowpanel-adv-35
+          - tdisplay-s3-amoled
+          - tdisplay-esp32
+          - esp32c3-oled
+    # a board that fails to build must not block the site — the page marks it "build pending"
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ matrix.env }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: pio-${{ runner.os }}-
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build ${{ matrix.env }}
+        run: pio run -e ${{ matrix.env }}
+
+      - name: Collect flash images
+        run: |
+          mkdir -p out/${{ matrix.env }}
+          cp .pio/build/${{ matrix.env }}/bootloader.bin out/${{ matrix.env }}/
+          cp .pio/build/${{ matrix.env }}/partitions.bin out/${{ matrix.env }}/
+          cp .pio/build/${{ matrix.env }}/firmware.bin   out/${{ matrix.env }}/
+          cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin out/${{ matrix.env }}/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.env }}
+          path: out
+          if-no-files-found: error
+
+  site:
+    needs: firmware
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: firmware-*
+          path: web/firmware
+          merge-multiple: true
+
+      - name: Index available firmware
+        run: |
+          mkdir -p web/firmware
+          cd web/firmware
+          ls -d */ 2>/dev/null | sed 's#/##' | jq -R . | jq -s . > available.json
+          echo "available boards:" && cat available.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: site
+    if: always()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

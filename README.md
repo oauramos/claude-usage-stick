@@ -4,6 +4,7 @@
 
 **Your [Claude Code](https://docs.anthropic.com/en/docs/claude-code) rate limits, glanceable on a tiny ESP32 stick.**
 
+[![Web Flasher](https://img.shields.io/badge/⚡_web_flasher-flash_from_your_browser-D97757?style=flat-square)](https://oauramos.github.io/claude-usage-stick/)
 [![Firmware](https://img.shields.io/badge/firmware-🥭_Mango_(v2)-D97757?style=flat-square)](#-the-ui)
 [![PlatformIO](https://img.shields.io/badge/PlatformIO-ESP32_·_S2_·_S3_·_C3-FF7F00?style=flat-square&logo=platformio&logoColor=white)](https://platformio.org/)
 [![Framework](https://img.shields.io/badge/framework-Arduino-00979D?style=flat-square&logo=arduino&logoColor=white)](https://www.arduino.cc/)
@@ -86,13 +87,15 @@ The Mango dashboard keeps the same header and usage bars on every board, and ada
 
 ### Prerequisites
 
-- [PlatformIO CLI](https://platformio.org/install/cli) installed
 - A supported board connected via USB-C
 - A Claude Code OAuth token (run `claude setup-token` in your terminal)
+- [PlatformIO CLI](https://platformio.org/install/cli) — only if you flash from source; the web flasher needs nothing installed
 
 ### 1. Flash the firmware
 
-Pick your board's env from the [hardware table](#%EF%B8%8F-supported-hardware), then:
+**⚡ From your browser (recommended):** open the **[web flasher](https://oauramos.github.io/claude-usage-stick/)** in Chrome or Edge on desktop, pick your board, plug it in over USB-C, and hit Flash. Firmware images are built and published automatically from `main`.
+
+**From source:** pick your board's env from the [hardware table](#%EF%B8%8F-supported-hardware), then:
 
 ```bash
 git clone https://github.com/oauramos/claude-usage-stick.git

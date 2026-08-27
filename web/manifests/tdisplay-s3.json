@@ -1,0 +1,28 @@
+{
+  "name": "Claude Usage Stick \u2014 LilyGo T-Display S3",
+  "version": "2.1.1",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "../firmware/tdisplay-s3/bootloader.bin",
+          "offset": 0
+        },
+        {
+          "path": "../firmware/tdisplay-s3/partitions.bin",
+          "offset": 32768
+        },
+        {
+          "path": "../firmware/tdisplay-s3/boot_app0.bin",
+          "offset": 57344
+        },
+        {
+          "path": "../firmware/tdisplay-s3/firmware.bin",
+          "offset": 65536
+        }
+      ]
+    }
+  ]
+}
