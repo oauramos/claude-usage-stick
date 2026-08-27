@@ -1,0 +1,28 @@
+{
+  "name": "Claude Usage Stick \u2014 TTGO T-Display",
+  "version": "1.0.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "../firmware/tdisplay-esp32/bootloader.bin",
+          "offset": 4096
+        },
+        {
+          "path": "../firmware/tdisplay-esp32/partitions.bin",
+          "offset": 32768
+        },
+        {
+          "path": "../firmware/tdisplay-esp32/boot_app0.bin",
+          "offset": 57344
+        },
+        {
+          "path": "../firmware/tdisplay-esp32/firmware.bin",
+          "offset": 65536
+        }
+      ]
+    }
+  ]
+}

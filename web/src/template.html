@@ -1,0 +1,798 @@
+<title>Claude Usage Stick Flasher</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Silkscreen&display=swap">
+<style>
+  /* ── Deliberately single-theme: this page lives in the device's own screen-world.
+     Every surface and color is painted explicitly so it holds on any host ground. ── */
+  :root {
+    --ground: #16130f;
+    --surface: #1f1a14;
+    --surface-2: #262019;
+    --line: #383024;
+    --line-soft: #2b2419;
+    --text: #ece3d6;
+    --text-dim: #a89a86;
+    --text-faint: #7d715f;
+    --coral: #d97757;
+    --coral-bright: #e98963;
+    --mango: #f0a83c;
+    --ok: #8fb573;
+    --screen: #0c0a08;
+    --font-display: "Chakra Petch", "Avenir Next Condensed", sans-serif;
+    --font-body: "IBM Plex Sans", "Helvetica Neue", sans-serif;
+    --font-mono: "IBM Plex Mono", "SF Mono", monospace;
+    --font-pixel: "Silkscreen", "IBM Plex Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 24px; }
+  a { color: var(--coral-bright); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--mango); outline-offset: 3px; border-radius: 4px; }
+  img { max-width: 100%; display: block; }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid var(--line-soft);
+    background: rgba(22,19,15,.88);
+    backdrop-filter: blur(8px);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .header-in { display: flex; align-items: center; gap: 12px; padding: 14px 0; }
+  .mark {
+    width: 30px; height: 30px; border-radius: 7px;
+    background: var(--screen); border: 1px solid var(--line);
+    display: grid; place-items: center;
+  }
+  .mark svg { width: 20px; height: 20px; display: block; }
+  .mark .eye { animation: markblink 4.6s infinite; }
+  @keyframes markblink { 0%, 92%, 100% { opacity: 1; } 94%, 97% { opacity: 0; } }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: .01em; }
+  .wordmark .v { color: var(--text-faint); font-weight: 500; font-size: 13px; margin-left: 6px; font-family: var(--font-mono); }
+  nav { margin-left: auto; display: flex; gap: 22px; align-items: center; }
+  nav a { color: var(--text-dim); font-size: 14px; font-weight: 500; }
+  nav a:hover { color: var(--text); text-decoration: none; }
+  nav a.gh {
+    color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 14px; font-family: var(--font-mono); font-size: 13px;
+  }
+  nav a.gh:hover { border-color: var(--coral); }
+
+  /* ── Hero ── */
+  .hero { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,.92fr); gap: 56px; align-items: center; padding: 72px 0 64px; }
+  .eyebrow {
+    font-family: var(--font-display); font-weight: 600; font-size: 12.5px;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--mango);
+    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+  }
+  .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--mango); }
+  h1 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(34px, 4.6vw, 52px); line-height: 1.08;
+    margin: 0 0 20px; letter-spacing: -.01em; text-wrap: balance;
+  }
+  h1 em { font-style: normal; color: var(--coral); }
+  .hero p.lede { color: var(--text-dim); font-size: 17.5px; max-width: 46ch; margin: 0 0 30px; }
+  .cta-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .btn-primary {
+    font-family: var(--font-display); font-weight: 600; font-size: 17px;
+    background: var(--coral); color: #16130f; border: none; cursor: pointer;
+    padding: 15px 30px; border-radius: 10px; letter-spacing: .01em;
+    transition: background .15s, transform .1s;
+    display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
+  }
+  .btn-primary:hover { background: var(--coral-bright); text-decoration: none; transform: translateY(-1px); }
+  .btn-ghost {
+    font-family: var(--font-mono); font-size: 14px; color: var(--text-dim);
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px 22px;
+    display: inline-flex; align-items: center; gap: 9px;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text-faint); text-decoration: none; }
+  .btn-ghost svg { flex: none; }
+
+  /* shimmering CTA: flowing coral→mango gradient + a periodic gloss sweep */
+  .btn-primary.btn-shine, .btn-primary.btn-shine:hover {
+    background: linear-gradient(110deg, var(--coral), var(--mango), var(--coral-bright), var(--coral));
+    background-size: 300% 100%;
+    animation: shineflow 3.4s ease-in-out infinite alternate;
+    position: relative; overflow: hidden;
+    box-shadow: 0 6px 26px rgba(240, 168, 60, .28);
+  }
+  .btn-primary.btn-shine:hover { filter: brightness(1.07); }
+  @keyframes shineflow { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+  .btn-shine::after {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 45%; left: -70%;
+    background: linear-gradient(105deg, transparent, rgba(255,255,255,.5), transparent);
+    transform: skewX(-20deg);
+    animation: sheen 3.8s ease-in-out infinite;
+  }
+  @keyframes sheen { 0% { left: -70%; } 45%, 100% { left: 140%; } }
+
+  /* mini device-screen strip under the hero copy */
+  .mini-screen {
+    margin-top: 40px; background: var(--screen); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 18px; max-width: 420px;
+    box-shadow: 0 0 0 4px #211c15, 0 12px 40px rgba(0,0,0,.5);
+  }
+  .mini-row { display: grid; grid-template-columns: 30px 1fr 48px; gap: 12px; align-items: center; margin: 10px 0; }
+  .mini-label { font-family: var(--font-pixel); font-size: 10px; color: var(--text-dim); }
+  .mini-val { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); text-align: right; font-variant-numeric: tabular-nums; }
+  .mini-track { height: 12px; background: #221d16; border-radius: 3px; overflow: hidden; }
+  .mini-fill { height: 100%; background: var(--coral); border-radius: 3px; width: 0; }
+  .mini-fill.dim { background: #8a6a4f; }
+  .filled .mini-fill { width: var(--w); transition: width 1.4s cubic-bezier(.25,.9,.3,1); }
+  .mini-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; border-top: 1px solid #221d16; padding-top: 10px; }
+  .mini-models { display: flex; gap: 10px; }
+  .clawd { width: 10px; height: 9px; background: var(--coral); border-radius: 2px 2px 3px 3px; position: relative; }
+  .clawd::before, .clawd::after {
+    content: ""; position: absolute; top: 2px; width: 2px; height: 2px; background: var(--screen);
+  }
+  .clawd::before { left: 2px; } .clawd::after { right: 2px; }
+  .blink { animation: blink 3.2s infinite; }
+  .blink:nth-child(2) { animation-delay: .9s; }
+  .blink:nth-child(3) { animation-delay: 1.7s; }
+  .blink:nth-child(4) { animation-delay: 2.4s; }
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.2); } }
+  .mini-reset { font-family: var(--font-pixel); font-size: 9px; color: var(--text-faint); }
+
+  .hero-photo { position: relative; }
+  .hero-photo img { border-radius: 14px; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+  .hero-photo figcaption { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); margin-top: 12px; }
+
+  /* ── chips strip ── */
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 0 64px; }
+  .chip {
+    font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim);
+    border: 1px solid var(--line-soft); background: var(--surface);
+    padding: 7px 14px; border-radius: 999px;
+  }
+  .chip b { color: var(--text); font-weight: 500; }
+
+  /* ── Sections ── */
+  section { padding: 64px 0; border-top: 1px solid var(--line-soft); }
+  .sec-head { margin-bottom: 40px; max-width: 62ch; }
+  h2 {
+    font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 3vw, 34px);
+    margin: 0 0 12px; letter-spacing: -.005em; text-wrap: balance;
+  }
+  .sec-head p { color: var(--text-dim); margin: 0; font-size: 16.5px; }
+
+  /* features */
+  .features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .feature {
+    background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px;
+    padding: 22px 20px;
+  }
+  .feature .f-icon { font-size: 20px; margin-bottom: 12px; }
+  .feature h3 { font-family: var(--font-display); font-weight: 600; font-size: 16px; margin: 0 0 8px; }
+  .feature p { font-size: 14px; color: var(--text-dim); margin: 0; line-height: 1.55; }
+
+  .screens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 44px; }
+  .screens figure { margin: 0; }
+  .screens img { border-radius: 10px; border: 1px solid var(--line); width: 100%; }
+  .screens figcaption { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); margin-top: 10px; }
+
+  /* ── Flasher ── */
+  #flash .sec-head { max-width: 70ch; }
+  .step-label {
+    display: flex; align-items: baseline; gap: 14px; margin: 46px 0 20px;
+  }
+  .step-num {
+    font-family: var(--font-pixel); font-size: 13px; color: var(--mango);
+  }
+  .step-label h3 { font-family: var(--font-display); font-weight: 600; font-size: 20px; margin: 0; }
+  .step-label .hint { font-size: 14px; color: var(--text-faint); margin-left: auto; font-family: var(--font-mono); }
+
+  .board-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    border: 0; margin: 0; padding: 0;
+  }
+  .board-card { position: relative; }
+  .board-card input { position: absolute; opacity: 0; pointer-events: none; }
+  .board-card label {
+    display: flex; flex-direction: column; height: 100%;
+    background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px;
+    padding: 14px 14px 16px; cursor: pointer;
+    transition: border-color .15s, transform .12s, background .15s;
+  }
+  .board-card label:hover { border-color: var(--text-faint); transform: translateY(-2px); }
+  .board-card input:checked + label {
+    border-color: var(--coral); background: var(--surface-2);
+    box-shadow: 0 0 0 1px var(--coral), 0 10px 30px rgba(217,119,87,.12);
+  }
+  .board-card input:focus-visible + label { outline: 2px solid var(--mango); outline-offset: 3px; }
+  .board-illo {
+    background: radial-gradient(ellipse at 50% 42%, #14100c 0%, var(--screen) 70%);
+    border-radius: 8px; margin-bottom: 14px;
+    border: 1px solid var(--line-soft);
+    display: block;
+  }
+
+  /* ── 3D board models — pure CSS cuboids on a turntable, item-drop style ── */
+  .b3d-stage {
+    position: relative; display: grid; place-items: center;
+    height: 150px; width: 100%; perspective: 560px; overflow: hidden;
+    cursor: grab; user-select: none; -webkit-user-select: none; touch-action: pan-y;
+  }
+  .b3d-stage.dragging { cursor: grabbing; }
+
+  /* hero-sized stage: the T-Display S3 with the real Mango dashboard on screen */
+  .hero-stage { height: 340px; perspective: 1100px; }
+  .hero-stage::before { font-size: 14px; top: 42px; }
+  .hero-stage::after { font-size: 11px; top: 84px; }
+  .hero-stage .b3d-glow { width: 230px; height: 24px; bottom: 16px; filter: blur(5px); }
+  .b3d-scale { display: block; transform-style: preserve-3d; }
+  .b3d .scr.scr-img { background-size: 100% 100%; image-rendering: pixelated; border-color: #4a423a; }
+  /* molded-case look for the hero board */
+  .b3d-case .face { border-radius: 12px; }
+  .b3d .grille { background: repeating-linear-gradient(90deg, rgba(0,0,0,.45) 0 4px, transparent 4px 10px); border-radius: 3px; }
+  .b3d .screw { background: #0f0c0a; border-radius: 50%; box-shadow: inset 0 1px 1px rgba(255,255,255,.08); }
+  .b3d .usbc { background: #0c0a08; border: 1px solid #3d362f; border-radius: 6px; }
+  .hero-3d-cap { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); text-align: center; margin: 10px 0 0; }
+  @media (max-width: 480px) { .hero-stage .b3d-scale { transform: scale(.72); } }
+  .b3d-stage::before, .b3d-stage::after {
+    content: "✦"; position: absolute; color: var(--mango); font-size: 9px;
+    opacity: 0; animation: twinkle 3.4s infinite;
+  }
+  .b3d-stage::before { top: 18px; left: 20%; }
+  .b3d-stage::after { top: 46px; right: 16%; animation-delay: 1.6s; font-size: 7px; }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; transform: scale(.6) rotate(0deg); }
+    50% { opacity: .85; transform: scale(1) rotate(90deg); }
+  }
+  .b3d-float { transform-style: preserve-3d; animation: bob 4.2s ease-in-out infinite alternate; }
+  @keyframes bob { from { transform: translateY(-3px); } to { transform: translateY(4px); } }
+  .b3d-tilt { display: block; transform-style: preserve-3d; transform: rotateX(-16deg); }
+  /* rotation is driven by JS (see turntables script) so the items keep spinning
+     even under OS reduce-motion — the static rotateY here is only the no-JS fallback */
+  .b3d {
+    display: block; position: relative; transform-style: preserve-3d;
+    width: var(--w); height: var(--h);
+    transform: rotateY(-28deg);
+  }
+
+  .b3d .face, .b3d .edge {
+    position: absolute; left: 50%; top: 50%; display: block;
+    backface-visibility: hidden;
+  }
+  .b3d .face { width: var(--w); height: var(--h); background: var(--pcb); border-radius: 4px; }
+  .b3d .face.f { transform: translate(-50%,-50%) translateZ(calc(var(--d) / 2)); }
+  .b3d .face.k { transform: translate(-50%,-50%) rotateY(180deg) translateZ(calc(var(--d) / 2)); filter: brightness(.82); }
+  .b3d .edge { background: var(--pcbe); }
+  .b3d .edge.l { width: var(--d); height: var(--h); transform: translate(-50%,-50%) rotateY(-90deg) translateZ(calc(var(--w) / 2)); }
+  .b3d .edge.r { width: var(--d); height: var(--h); transform: translate(-50%,-50%) rotateY(90deg) translateZ(calc(var(--w) / 2)); }
+  .b3d .edge.t { width: var(--w); height: var(--d); transform: translate(-50%,-50%) rotateX(90deg) translateZ(calc(var(--h) / 2)); }
+  .b3d .edge.b { width: var(--w); height: var(--d); transform: translate(-50%,-50%) rotateX(-90deg) translateZ(calc(var(--h) / 2)); }
+
+  /* face detail primitives (i elements) */
+  .b3d i { position: absolute; display: block; }
+  .b3d .scr { background: #000; border: 1px solid rgba(255,255,255,.16); border-radius: 2px; }
+  .b3d .bar { background: var(--coral); border-radius: 1px; }
+  .b3d .bar.d2 { background: #8a6a4f; }
+  .b3d .pdot { background: var(--coral); border-radius: 1px; }
+  .b3d .rbtn { background: #c2431d; border-radius: 3px; }
+  .b3d .rbtn.gr { background: #48413a; border-radius: 50%; }
+  .b3d .rbtn.sq { background: #48413a; border-radius: 2px; }
+  .b3d .usbp { background: #57524c; border-radius: 2px; }
+  .b3d .shield { background: linear-gradient(160deg, #625b51, #38332c); border: 1px solid #6d6459; border-radius: 2px; }
+  .b3d .antz { background: repeating-linear-gradient(90deg, #8b7d55 0 2px, transparent 2px 5px); }
+  .b3d .pin { background: #8b7d55; border-radius: 50%; }
+  .b3d .plate { background: rgba(0,0,0,.18); border-radius: 4px; }
+
+  .b3d-glow {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 74px; height: 13px; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(217,119,87,.30), transparent 70%);
+    filter: blur(3px); animation: glowpulse 4.2s ease-in-out infinite alternate;
+  }
+  @keyframes glowpulse { from { opacity: .65; transform: translateX(-50%) scaleX(.92); } to { opacity: 1; transform: translateX(-50%) scaleX(1.06); } }
+  .board-card input:checked + label .b3d-glow {
+    background: radial-gradient(ellipse, rgba(217,119,87,.55), transparent 72%);
+  }
+  .board-card h4 { font-family: var(--font-display); font-weight: 600; font-size: 15.5px; margin: 0 0 4px; line-height: 1.25; }
+  .board-meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); margin: 0 0 12px; }
+  .board-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
+  .tag {
+    font-family: var(--font-mono); font-size: 10.5px; padding: 3px 8px; border-radius: 5px;
+    border: 1px solid var(--line); color: var(--text-dim);
+  }
+  .tag.mango { color: var(--mango); border-color: rgba(240,168,60,.4); }
+  .tag.chipfam { color: var(--text-dim); background: var(--line-soft); border-color: transparent; }
+  .board-card .sel-dot {
+    position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--line); background: var(--surface); z-index: 2;
+    display: grid; place-items: center; pointer-events: none;
+    transition: border-color .15s;
+  }
+  .board-card input:checked ~ .sel-dot { border-color: var(--coral); }
+  .board-card input:checked ~ .sel-dot::after {
+    content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--coral);
+  }
+
+  /* the big flash button */
+  .flash-zone {
+    margin-top: 26px; background: var(--surface); border: 1px solid var(--line-soft);
+    border-radius: 16px; padding: 30px; display: flex; flex-direction: column; gap: 18px;
+  }
+  #flashBtn {
+    width: 100%; border: none; cursor: pointer; border-radius: 12px;
+    font-family: var(--font-display); font-weight: 700; letter-spacing: .01em;
+    font-size: clamp(19px, 2.4vw, 24px); padding: 24px;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    background: var(--coral); color: #16130f;
+    transition: background .15s, transform .1s, box-shadow .15s;
+    box-shadow: 0 10px 34px rgba(217,119,87,.25);
+  }
+  #flashBtn:hover:not(:disabled) { background: var(--coral-bright); transform: translateY(-1px); }
+  #flashBtn:disabled {
+    background: var(--line-soft); color: var(--text-faint); cursor: not-allowed; box-shadow: none;
+  }
+  #flashBtn .bolt { font-size: 1.15em; }
+  .flash-notes { display: flex; flex-wrap: wrap; gap: 8px 22px; justify-content: center; }
+  .flash-notes span { font-family: var(--font-mono); font-size: 12.5px; color: var(--text-faint); display: flex; align-items: center; gap: 7px; }
+  .flash-notes .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ok); flex: none; }
+
+  /* step 03 setup */
+  .setup { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .setup > div {
+    background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px; padding: 20px;
+  }
+  .setup .k { font-family: var(--font-pixel); font-size: 10px; color: var(--mango); display: block; margin-bottom: 10px; }
+
+  /* minimalist phone vignettes for the setup steps — base styles are the finished
+     state, so with animations off (reduced motion) each phone shows the end result */
+  .phone-stage { display: flex; justify-content: center; margin: 8px 0 18px; }
+  .phone {
+    width: 104px; height: 178px; border-radius: 16px;
+    background: var(--screen); border: 2px solid #3a3229;
+    position: relative; padding: 16px 9px 9px;
+  }
+  .phone::before {
+    content: ""; position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+    width: 26px; height: 4px; border-radius: 2px; background: #3a3229;
+  }
+  .ph-screen { height: 100%; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-mono); min-height: 0; }
+  .ph-screen i { display: block; font-style: normal; }
+
+  /* card 1 — join the AP */
+  .ph-wifi { width: 26px; height: 22px; align-self: center; margin: 4px 0 2px; }
+  .ph-wifi path { stroke: var(--coral); stroke-width: 2.2; fill: none; stroke-linecap: round; }
+  .ph-wifi circle { fill: var(--coral); }
+  .ph-wifi .a1 { animation: wifipulse 2.4s infinite; }
+  .ph-wifi .a2 { animation: wifipulse 2.4s infinite .35s; }
+  .ph-wifi .a3 { animation: wifipulse 2.4s infinite .7s; }
+  @keyframes wifipulse { 0%, 15% { opacity: .2; } 35%, 55% { opacity: 1; } 85%, 100% { opacity: .2; } }
+  .ph-net {
+    font-size: 8px; color: var(--text-faint); border: 1px solid #221d16; border-radius: 4px;
+    padding: 4px 5px; display: flex; justify-content: space-between; align-items: center;
+    white-space: nowrap; overflow: hidden;
+  }
+  .ph-net.sel { color: var(--text); border-color: var(--coral); animation: netsel 6s infinite; }
+  .ph-net .ph-check { color: var(--ok); font-size: 8px; animation: checkin 6s infinite; }
+  @keyframes netsel { 0%, 28% { border-color: #221d16; color: var(--text-faint); } 38%, 100% { border-color: var(--coral); color: var(--text); } }
+  @keyframes checkin { 0%, 34% { opacity: 0; } 44%, 100% { opacity: 1; } }
+
+  /* card 2 — captive portal form */
+  .ph-url { font-size: 8px; color: var(--text-dim); background: #17130e; border-radius: 4px; padding: 3px 5px; text-align: center; }
+  .ph-lbl { font-size: 6.5px; letter-spacing: .12em; color: var(--text-faint); margin-bottom: -3px; }
+  .ph-field { height: 9px; border: 1px solid #221d16; border-radius: 3px; position: relative; overflow: hidden; }
+  .ph-field::after { content: ""; position: absolute; inset: 1px; background: #6b4a3a; border-radius: 2px; transform-origin: left; }
+  .ph-field.f1::after { animation: fill1 7s infinite; }
+  .ph-field.f2::after { animation: fill2 7s infinite; }
+  @keyframes fill1 { 0%, 6% { transform: scaleX(0); } 24%, 100% { transform: scaleX(1); } }
+  @keyframes fill2 { 0%, 28% { transform: scaleX(0); } 46%, 100% { transform: scaleX(1); } }
+  .ph-pins { display: flex; gap: 5px; }
+  .ph-pins i { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); }
+  .ph-pins i:nth-child(1) { animation: pin1 7s infinite; }
+  .ph-pins i:nth-child(2) { animation: pin2 7s infinite; }
+  .ph-pins i:nth-child(3) { animation: pin3 7s infinite; }
+  .ph-pins i:nth-child(4) { animation: pin4 7s infinite; }
+  @keyframes pin1 { 0%, 50% { opacity: .15; } 54%, 100% { opacity: 1; } }
+  @keyframes pin2 { 0%, 56% { opacity: .15; } 60%, 100% { opacity: 1; } }
+  @keyframes pin3 { 0%, 62% { opacity: .15; } 66%, 100% { opacity: 1; } }
+  @keyframes pin4 { 0%, 68% { opacity: .15; } 72%, 100% { opacity: 1; } }
+  .ph-save {
+    font-size: 6.5px; letter-spacing: .08em; text-align: center; padding: 5px 0; border-radius: 4px;
+    background: var(--coral); color: #16130f; margin-top: auto; font-weight: 500;
+    animation: saveflash 7s infinite;
+  }
+  @keyframes saveflash { 0%, 76% { opacity: .3; } 84%, 96% { opacity: 1; } 100% { opacity: .3; } }
+
+  /* card 3 — done, dashboard alive */
+  .ph-ok { width: 32px; height: 32px; align-self: center; margin: 8px 0 4px; transform-origin: center; animation: okpop 6s infinite; }
+  .ph-ok circle, .ph-ok path { stroke: var(--ok); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes okpop { 0%, 8% { transform: scale(0); opacity: 0; } 16% { transform: scale(1.15); opacity: 1; } 22%, 100% { transform: scale(1); opacity: 1; } }
+  .ph-bar { height: 8px; border-radius: 2px; background: #221d16; position: relative; overflow: hidden; }
+  .ph-bar::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; }
+  .ph-bar.b1::after { width: 62%; background: var(--coral); animation: barin1 6s infinite; }
+  .ph-bar.b2::after { width: 34%; background: #8a6a4f; animation: barin2 6s infinite; }
+  @keyframes barin1 { 0%, 28% { width: 0; } 50%, 100% { width: 62%; } }
+  @keyframes barin2 { 0%, 34% { width: 0; } 56%, 100% { width: 34%; } }
+  .ph-models { display: flex; gap: 9px; justify-content: center; margin-top: 6px; }
+  .setup p { font-size: 14px; color: var(--text-dim); margin: 0; }
+  .setup code {
+    font-family: var(--font-mono); font-size: 12.5px; color: var(--coral-bright);
+    background: var(--screen); padding: 1px 6px; border-radius: 4px; white-space: nowrap;
+  }
+
+  /* ── Footer ── */
+  footer { border-top: 1px solid var(--line-soft); padding: 36px 0 52px; }
+  .foot-in { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; }
+  footer span, footer a { font-family: var(--font-mono); font-size: 13px; color: var(--text-faint); }
+  footer a:hover { color: var(--text); }
+  .foot-in .spacer { flex: 1; }
+
+  /* ── dialog ── */
+  dialog {
+    background: var(--surface); color: var(--text); border: 1px solid var(--line);
+    border-radius: 16px; padding: 0; max-width: 470px; width: calc(100% - 40px);
+  }
+  dialog::backdrop { background: rgba(10,8,6,.7); backdrop-filter: blur(3px); }
+  .dlg-in { padding: 28px; }
+  .dlg-in h3 { font-family: var(--font-display); font-weight: 700; font-size: 21px; margin: 0 0 6px; }
+  .dlg-board { font-family: var(--font-mono); font-size: 13px; color: var(--mango); margin: 0 0 20px; }
+  .dlg-steps { margin: 0 0 22px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .dlg-steps li { display: flex; gap: 12px; font-size: 14.5px; color: var(--text-dim); align-items: baseline; }
+  .dlg-steps .n { font-family: var(--font-pixel); font-size: 10px; color: var(--coral); flex: none; }
+  .dlg-actions { display: flex; gap: 10px; }
+  .dlg-actions .btn-primary { flex: 1; justify-content: center; font-size: 15px; padding: 13px; }
+  .dlg-actions .btn-ghost { padding: 12px 18px; background: none; cursor: pointer; }
+  .dlg-preview-note {
+    margin-top: 16px; font-size: 13px; color: var(--text-faint);
+    border-top: 1px dashed var(--line); padding-top: 14px; display: none;
+  }
+  .dlg-preview-note.show { display: block; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 48px; }
+    .features { grid-template-columns: repeat(2, 1fr); }
+    .board-grid { grid-template-columns: repeat(2, 1fr); }
+    .screens { grid-template-columns: 1fr; }
+    .setup { grid-template-columns: 1fr; }
+    nav a:not(.gh) { display: none; }
+  }
+  @media (max-width: 460px) {
+    .board-grid { grid-template-columns: 1fr; }
+    .features { grid-template-columns: 1fr; }
+  }
+</style>
+
+<header>
+  <div class="wrap header-in">
+    <div class="mark" aria-hidden="true"><svg viewBox="0 0 400 400">
+      <rect x="72" y="91" width="258" height="184" fill="#f25a45"/>
+      <rect x="12" y="152" width="60" height="62" fill="#f25a45"/>
+      <rect x="330" y="152" width="58" height="62" fill="#f25a45"/>
+      <rect x="72" y="275" width="34" height="68" fill="#f25a45"/>
+      <rect x="137" y="275" width="32" height="68" fill="#f25a45"/>
+      <rect x="231" y="275" width="32" height="68" fill="#f25a45"/>
+      <rect x="294" y="275" width="36" height="68" fill="#f25a45"/>
+      <rect class="eye" x="107" y="120" width="33" height="31" fill="#0e0d0d"/>
+      <rect class="eye" x="262" y="120" width="32" height="31" fill="#0e0d0d"/>
+    </svg></div>
+    <div class="wordmark">Claude Usage Stick<span class="v">🥭 mango v2</span></div>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#flash">Flash</a>
+      <a class="gh" href="https://github.com/oauramos/claude-usage-stick" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <div class="eyebrow">Open-source desk gadget · MIT</div>
+      <h1>Your Claude Code limits, <em>glanceable</em> on a tiny stick.</h1>
+      <p class="lede">A standalone ESP32 gadget that polls the Anthropic API and shows your rate-limit runway in real time — no computer, no app, no cloud. Flash it from this page, set it up from your phone, put it on your desk.</p>
+      <div class="cta-row">
+        <a class="btn-primary btn-shine" href="#flash"><span class="bolt">⚡</span> Flash a board</a>
+        <a class="btn-ghost" href="https://github.com/oauramos/claude-usage-stick" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Source & docs</a>
+      </div>
+      <div class="mini-screen" id="miniScreen" aria-hidden="true">
+        <div class="mini-row">
+          <span class="mini-label">5H</span>
+          <div class="mini-track"><div class="mini-fill" style="--w:62%"></div></div>
+          <span class="mini-val">62%</span>
+        </div>
+        <div class="mini-row">
+          <span class="mini-label">7D</span>
+          <div class="mini-track"><div class="mini-fill dim" style="--w:31%"></div></div>
+          <span class="mini-val">31%</span>
+        </div>
+        <div class="mini-foot">
+          <div class="mini-models">
+            <span class="clawd blink"></span><span class="clawd blink"></span>
+            <span class="clawd blink"></span><span class="clawd blink"></span>
+          </div>
+          <span class="mini-reset">RESET 2H14M</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-3d">
+      <!-- HERO_3D -->
+      <p class="hero-3d-cap">LilyGo T-Display S3 &middot; &#129389; Mango v2.1.1 &middot; tier L &mdash; drag to spin</p>
+    </div>
+  </div>
+
+  <div class="wrap chips">
+    <span class="chip"><b>8 boards</b> supported</span>
+    <span class="chip">token <b>AES-256-GCM</b> encrypted on-device</span>
+    <span class="chip"><b>no cloud</b> — talks straight to the API</span>
+    <span class="chip">setup via <b>captive portal</b></span>
+    <span class="chip"><b>MIT</b> licensed</span>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>What it shows</h2>
+        <p>The device reads the <code style="font-family:var(--font-mono);font-size:14px;color:var(--coral-bright)">anthropic-ratelimit-unified-*</code> headers and turns them into a dashboard that lives next to your keyboard.</p>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <div class="f-icon">📊</div>
+          <h3>Live usage bars</h3>
+          <p>The 5-hour and 7-day rate-limit windows, refreshed on an interval you choose (30 s – 5 min).</p>
+        </div>
+        <div class="feature">
+          <div class="f-icon">⏳</div>
+          <h3>Reset countdowns</h3>
+          <p>Know exactly when each window frees up — before you burn the last of your runway.</p>
+        </div>
+        <div class="feature">
+          <div class="f-icon">🥭</div>
+          <h3>Model mascots</h3>
+          <p>Haiku, Sonnet, Opus and Fable health from status.claude.com as blinking Clawds. A downed model goes gray with X eyes.</p>
+        </div>
+        <div class="feature">
+          <div class="f-icon">🔐</div>
+          <h3>PIN-locked token</h3>
+          <p>Your OAuth token is AES-256-GCM encrypted on the flash. The PIN is never stored — 10 wrong tries wipes the device.</p>
+        </div>
+      </div>
+      <div class="screens">
+        <figure><img src="%%BOOT%%" alt="Boot screen"><figcaption>boot — Clawd says hi</figcaption></figure>
+        <figure><img src="%%PIN%%" alt="PIN unlock screen"><figcaption>PIN unlock — buttons only, nothing stored</figcaption></figure>
+        <figure><img src="%%DASH%%" alt="Usage dashboard"><figcaption>dashboard — bars, countdowns, battery, WiFi</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="flash">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Flash from your browser</h2>
+        <p>No toolchain, no drivers, no cloned repo. Pick your board, plug it in over USB-C, and hit the button — the firmware is written straight from this page over Web Serial.</p>
+      </div>
+
+      <div class="step-label">
+        <span class="step-num">STEP 01</span>
+        <h3>Pick your board</h3>
+        <span class="hint">8 supported</span>
+      </div>
+
+      <fieldset class="board-grid" role="radiogroup" aria-label="Choose your board">
+        <!-- BOARD_CARDS -->
+      </fieldset>
+
+      <div class="step-label">
+        <span class="step-num">STEP 02</span>
+        <h3>Plug in &amp; flash</h3>
+      </div>
+
+      <div class="flash-zone">
+        <button id="flashBtn" disabled>
+          <span class="bolt">⚡</span><span id="flashBtnLabel">Select a board above</span>
+        </button>
+        <div class="flash-notes">
+          <span><i class="dot"></i>Chrome or Edge on desktop</span>
+          <span><i class="dot"></i>any USB-C data cable</span>
+          <span><i class="dot"></i>takes about 2 minutes</span>
+          <span><i class="dot"></i>nothing is uploaded — the firmware flows browser → board</span>
+        </div>
+      </div>
+
+      <div class="step-label">
+        <span class="step-num">STEP 03</span>
+        <h3>Set it up from your phone</h3>
+      </div>
+      <div class="setup">
+        <div>
+          <span class="k">JOIN THE AP</span>
+          <div class="phone-stage" aria-hidden="true"><div class="phone"><div class="ph-screen">
+            <svg class="ph-wifi" viewBox="0 0 24 20">
+              <path class="a3" d="M2.5 7.5 C8 2, 16 2, 21.5 7.5"/>
+              <path class="a2" d="M5.8 11 C9.5 7.5, 14.5 7.5, 18.2 11"/>
+              <path class="a1" d="M9 14.3 C10.7 12.8, 13.3 12.8, 15 14.3"/>
+              <circle cx="12" cy="17.5" r="1.6"/>
+            </svg>
+            <span class="ph-net">HomeWiFi</span>
+            <span class="ph-net sel">ClaudeMonitor<i class="ph-check">✓</i></span>
+            <span class="ph-net">CafeGuest</span>
+          </div></div></div>
+          <p>On first boot the device opens a WiFi network named <code>ClaudeMonitor-XXXX</code> — the password is on its screen.</p>
+        </div>
+        <div>
+          <span class="k">OPEN THE PORTAL</span>
+          <div class="phone-stage" aria-hidden="true"><div class="phone"><div class="ph-screen">
+            <span class="ph-url">192.168.4.1</span>
+            <span class="ph-lbl">WIFI</span>
+            <i class="ph-field f1"></i>
+            <span class="ph-lbl">TOKEN</span>
+            <i class="ph-field f2"></i>
+            <span class="ph-lbl">PIN</span>
+            <span class="ph-pins"><i></i><i></i><i></i><i></i></span>
+            <span class="ph-save">SAVE &amp; REBOOT</span>
+          </div></div></div>
+          <p>Browse to <code>192.168.4.1</code>, enter your WiFi, your OAuth token (<code>claude setup-token</code>) and a 4-digit PIN.</p>
+        </div>
+        <div>
+          <span class="k">DONE</span>
+          <div class="phone-stage" aria-hidden="true"><div class="phone"><div class="ph-screen">
+            <svg class="ph-ok" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M7.5 12.5 L10.5 15.5 L16.5 9"/>
+            </svg>
+            <i class="ph-bar b1"></i>
+            <i class="ph-bar b2"></i>
+            <span class="ph-models">
+              <span class="clawd blink"></span><span class="clawd blink"></span>
+              <span class="clawd blink"></span><span class="clawd blink"></span>
+            </span>
+          </div></div></div>
+          <p>Save &amp; reboot. The token is encrypted with your PIN, the device joins your WiFi, and the dashboard comes up.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-in">
+    <span>MIT © oauramos</span>
+    <a href="https://github.com/oauramos/claude-usage-stick" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/oauramos/claude-usage-stick/tree/main/docs" target="_blank" rel="noopener">Board docs</a>
+    <span class="spacer"></span>
+    <span>flashing powered by ESP Web Tools</span>
+  </div>
+</footer>
+
+<dialog id="flashDialog">
+  <div class="dlg-in">
+    <h3>Ready to flash</h3>
+    <p class="dlg-board" id="dlgBoard"></p>
+    <ol class="dlg-steps">
+      <li><span class="n">01</span><span>Connect the board to this computer with a USB-C <b>data</b> cable.</span></li>
+      <li><span class="n">02</span><span>If it isn't detected, hold <b>BOOT</b> while plugging in.</span></li>
+      <li><span class="n">03</span><span>Click connect and pick the serial port in the browser prompt.</span></li>
+    </ol>
+    <div class="dlg-actions">
+      <button class="btn-primary" id="dlgConnect">Connect &amp; flash</button>
+      <button class="btn-ghost" id="dlgCancel">Cancel</button>
+    </div>
+    <p class="dlg-preview-note" id="previewNote">🛠️ Design preview — live Web Serial flashing is wired up in the GitHub Pages build, where this button becomes the real <span style="font-family:var(--font-mono)">esp-web-install-button</span>.</p>
+  </div>
+</dialog>
+
+<script>
+  const BOARDS = {
+    // name shown on the button + env + chip family, mirrored from platformio.ini
+    "m5stick-cplus":     { name: "M5StickC Plus",            chip: "ESP32" },
+    "m5stick-cplus2":    { name: "M5StickC Plus2",           chip: "ESP32" },
+    "tdisplay-s3":       { name: "LilyGo T-Display S3",      chip: "ESP32-S3" },
+    "t8-s2":             { name: "LilyGo T8 ESP32-S2",       chip: "ESP32-S2" },
+    "crowpanel-adv-35":  { name: "CrowPanel Advance 3.5\"",  chip: "ESP32-S3" },
+    "tdisplay-s3-amoled":{ name: "T-Display S3 AMOLED",      chip: "ESP32-S3" },
+    "tdisplay-esp32":    { name: "TTGO T-Display",           chip: "ESP32" },
+    "esp32c3-oled":      { name: "ESP32-C3-OLED",            chip: "ESP32-C3" },
+  };
+
+  const btn = document.getElementById("flashBtn");
+  const btnLabel = document.getElementById("flashBtnLabel");
+  const dlg = document.getElementById("flashDialog");
+  const dlgBoard = document.getElementById("dlgBoard");
+  const previewNote = document.getElementById("previewNote");
+  let selected = null;
+
+  document.querySelectorAll('input[name="board"]').forEach(r => {
+    r.addEventListener("change", () => {
+      selected = r.value;
+      btn.disabled = false;
+      btnLabel.textContent = "Flash " + BOARDS[selected].name;
+    });
+  });
+
+  btn.addEventListener("click", () => {
+    if (!selected) return;
+    const b = BOARDS[selected];
+    dlgBoard.textContent = b.name + " · " + b.chip + " · env " + selected;
+    previewNote.classList.remove("show");
+    dlg.showModal();
+  });
+  document.getElementById("dlgCancel").addEventListener("click", () => dlg.close());
+  document.getElementById("dlgConnect").addEventListener("click", () => previewNote.classList.add("show"));
+  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+
+  // 3D board turntables — JS-driven so the items keep spinning even when the OS
+  // asks for reduced motion (the decorative float/sparkle/glow animations still
+  // honor it via CSS). Drag horizontally on a board to rotate it by hand.
+  const SPIN_SPEED = 48, HOVER_MULT = 2.7, DRAG_GAIN = 0.6;
+  const turntables = [...document.querySelectorAll(".b3d-stage")].map((stage, i) => {
+    const base = parseFloat(stage.dataset.speed) || SPIN_SPEED;
+    return {
+      stage,
+      el: stage.querySelector(".b3d"),
+      card: stage.closest(".board-card"),
+      hoverEl: stage.closest(".board-card") || stage,
+      angle: -28 - i * 47,
+      base,
+      speed: base,
+      manual: false,
+    };
+  }).filter(t => t.el);
+
+  let lastT = performance.now();
+  function spinTick(now) {
+    const dt = Math.min((now - lastT) / 1000, 0.1);
+    lastT = now;
+    for (const t of turntables) {
+      if (!t.manual) t.angle = (t.angle + t.speed * dt) % 360;
+      t.el.style.transform = "rotateY(" + t.angle + "deg)";
+    }
+    requestAnimationFrame(spinTick);
+  }
+  requestAnimationFrame(spinTick);
+
+  turntables.forEach(t => {
+    t.hoverEl.addEventListener("mouseenter", () => { t.speed = t.base * HOVER_MULT; });
+    t.hoverEl.addEventListener("mouseleave", () => { t.speed = t.base; });
+    t.stage.addEventListener("pointerdown", e => {
+      t.manual = true;
+      t.stage.classList.add("dragging");
+      try { t.stage.setPointerCapture(e.pointerId); } catch (err) { /* synthetic or unsupported pointers */ }
+      const startX = e.clientX, startAngle = t.angle;
+      let moved = false;
+      const move = ev => {
+        if (Math.abs(ev.clientX - startX) > 5) moved = true;
+        t.angle = startAngle + (ev.clientX - startX) * DRAG_GAIN;
+        t.el.style.transform = "rotateY(" + t.angle + "deg)";
+      };
+      const up = () => {
+        t.manual = false;
+        t.stage.classList.remove("dragging");
+        t.stage.removeEventListener("pointermove", move);
+        t.stage.removeEventListener("pointerup", up);
+        t.stage.removeEventListener("pointercancel", up);
+        if (moved && t.card) {
+          // a drag is an inspection, not a choice — swallow the click it would fire
+          t.card.addEventListener("click", ev => { ev.preventDefault(); ev.stopPropagation(); },
+            { capture: true, once: true });
+        }
+      };
+      t.stage.addEventListener("pointermove", move);
+      t.stage.addEventListener("pointerup", up);
+      t.stage.addEventListener("pointercancel", up);
+    });
+  });
+
+  // animate hero usage bars on load
+  try {
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      requestAnimationFrame(() => document.getElementById("miniScreen").classList.add("filled"));
+    } else {
+      document.getElementById("miniScreen").classList.add("filled");
+    }
+  } catch (e) { document.getElementById("miniScreen").classList.add("filled"); }
+</script>

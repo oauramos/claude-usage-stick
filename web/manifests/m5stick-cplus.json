@@ -1,0 +1,28 @@
+{
+  "name": "Claude Usage Stick \u2014 M5StickC Plus",
+  "version": "2.0.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "../firmware/m5stick-cplus/bootloader.bin",
+          "offset": 4096
+        },
+        {
+          "path": "../firmware/m5stick-cplus/partitions.bin",
+          "offset": 32768
+        },
+        {
+          "path": "../firmware/m5stick-cplus/boot_app0.bin",
+          "offset": 57344
+        },
+        {
+          "path": "../firmware/m5stick-cplus/firmware.bin",
+          "offset": 65536
+        }
+      ]
+    }
+  ]
+}

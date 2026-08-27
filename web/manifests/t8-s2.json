@@ -1,0 +1,28 @@
+{
+  "name": "Claude Usage Stick \u2014 LilyGo T8 ESP32-S2",
+  "version": "1.0.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S2",
+      "parts": [
+        {
+          "path": "../firmware/t8-s2/bootloader.bin",
+          "offset": 4096
+        },
+        {
+          "path": "../firmware/t8-s2/partitions.bin",
+          "offset": 32768
+        },
+        {
+          "path": "../firmware/t8-s2/boot_app0.bin",
+          "offset": 57344
+        },
+        {
+          "path": "../firmware/t8-s2/firmware.bin",
+          "offset": 65536
+        }
+      ]
+    }
+  ]
+}

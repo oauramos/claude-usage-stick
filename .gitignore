@@ -2,3 +2,4 @@
 .vscode/
 upload_data.py
 .DS_Store
+web/firmware/
