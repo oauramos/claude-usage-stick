@@ -67,7 +67,6 @@
   .mark .eye { animation: markblink 4.6s infinite; }
   @keyframes markblink { 0%, 92%, 100% { opacity: 1; } 94%, 97% { opacity: 0; } }
   .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: .01em; }
-  .wordmark .v { color: var(--text-faint); font-weight: 500; font-size: 13px; margin-left: 6px; font-family: var(--font-mono); }
   nav { margin-left: auto; display: flex; gap: 22px; align-items: center; }
   nav a { color: var(--text-dim); font-size: 14px; font-weight: 500; }
   nav a:hover { color: var(--text); text-decoration: none; }
@@ -188,8 +187,85 @@
 
   .screens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 44px; }
   .screens figure { margin: 0; }
-  .screens img { border-radius: 10px; border: 1px solid var(--line); width: 100%; }
   .screens figcaption { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); margin-top: 10px; }
+
+  /* ── recreated device screens ── the three states the firmware actually draws,
+     rebuilt in CSS so they stay sharp at any size. Base styles are the resting
+     state, so with animation off each screen still reads correctly. */
+  .dev {
+    aspect-ratio: 320 / 170; background: var(--screen);
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 9px 11px; display: flex; flex-direction: column;
+    font-family: var(--font-pixel); container-type: inline-size;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.5);
+    overflow: hidden;   /* a screen doesn't spill past its bezel */
+  }
+  .dev i { display: block; font-style: normal; }
+  /* type scales with the card so the screens hold together at any column width */
+  .dev-t { font-size: 7.5cqw; line-height: 1.4; }
+  .dev-s { font-size: 4.6cqw; line-height: 1.5; }
+  .dev-xs { font-size: 3.5cqw; line-height: 1.5; }
+
+  /* boot */
+  .dev-boot { align-items: center; justify-content: center; gap: 5%; }
+  .dev-boot .ttl { color: var(--mango); letter-spacing: .04em; }
+  .dev-boot .track { width: 84%; height: 11%; background: #241d15; border-radius: 2px; overflow: hidden; }
+  .dev-boot .fill { height: 100%; width: 95%; background: var(--mango); border-radius: 2px; animation: bootfill 5s ease-out infinite; }
+  @keyframes bootfill { 0% { width: 8%; } 60%, 100% { width: 95%; } }
+  .dev-boot .pct { color: var(--text-dim); }
+  .dev-boot .fetch { color: var(--text-faint); align-self: flex-start; }
+  .dev-boot .fetch::after { content: "..."; animation: dots 1.8s steps(4) infinite; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75%, 100% { content: "..."; } }
+
+  /* PIN unlock — inner gaps use cqw, not %: a percentage gap inside a
+     shrink-to-fit flex row resolves against its own width and overflows */
+  /* PIN unlock */
+  .dev-pin { align-items: center; justify-content: center; gap: 6%; }
+  .dev-pin .ttl { color: var(--text); letter-spacing: .1em; }
+  .dev-pin .boxes { display: flex; gap: 3cqw; }
+  .dev-pin .bx {
+    width: 12cqw; height: 12cqw; border: 1px solid var(--text-faint); border-radius: 2px;
+    display: grid; place-items: center; font-size: 6cqw; color: var(--text-dim);
+  }
+  .dev-pin .bx.on { border-color: var(--mango); color: var(--mango); box-shadow: 0 0 0 1px var(--mango); }
+  .dev-pin .bx.on::after { content: "0"; animation: digit 4s steps(1) infinite; }
+  @keyframes digit {
+    0% { content: "0"; } 20% { content: "3"; } 40% { content: "7"; }
+    60% { content: "2"; } 80%, 100% { content: "9"; }
+  }
+  .dev-pin .hint { color: var(--text-faint); display: flex; gap: 2.5cqw; font-size: 2.7cqw; }
+  .dev-pin .hint i { white-space: nowrap; }
+
+  /* dashboard — mirrors the tier L layout: the usage bar IS the row, with the
+     label and percentage sitting on top of the fill */
+  /* gap is set on .dev itself, which is its own container — cqw would fall back to
+     the viewport here, so percentages (of the aspect-ratio height) are what work */
+  .dev-dash { gap: 3.4%; }
+  .dev-dash .bar-hd {
+    background: var(--coral); color: #16130f; border-radius: 2px;
+    padding: 1.2cqw 2cqw; display: flex; justify-content: space-between; align-items: center;
+  }
+  .dev-dash .win {
+    position: relative; background: #1d1811; border-radius: 2px; overflow: hidden;
+    padding: 1.4cqw 2cqw; display: flex; justify-content: space-between; align-items: center;
+    color: var(--text); isolation: isolate;
+  }
+  .dev-dash .win .fill {
+    position: absolute; left: 0; top: 0; bottom: 0; z-index: -1;
+    background: var(--coral); animation: dashfill1 6s ease-out infinite;
+  }
+  .dev-dash .win .fill.d2 { background: #7a5c45; animation-name: dashfill2; }
+  @keyframes dashfill1 { 0% { width: 0; } 45%, 100% { width: 62%; } }
+  @keyframes dashfill2 { 0%, 12% { width: 0; } 55%, 100% { width: 31%; } }
+  .dev-dash .rest { display: flex; gap: 5cqw; color: var(--text-faint); padding: 0 1cqw; }
+  .dev-dash .rest b { color: var(--text); font-weight: 400; }
+  .dev-dash .models { display: flex; justify-content: space-between; margin-top: auto; padding: 0 1cqw; }
+  .dev-dash .models span { display: flex; flex-direction: column; align-items: center; gap: 1.2cqw; color: var(--text-faint); }
+  .dev-dash .models .clawd { width: 7cqw; height: 5.6cqw; }
+  /* eyes are fixed px on the hero mascots — scale them here so they track the bigger body */
+  .dev-dash .models .clawd::before, .dev-dash .models .clawd::after { top: 22%; width: 20%; height: 24%; }
+  .dev-dash .models .clawd::before { left: 20%; }
+  .dev-dash .models .clawd::after { right: 20%; }
 
   /* ── Flasher ── */
   #flash .sec-head { max-width: 70ch; }
@@ -497,7 +573,7 @@
       <rect class="eye" x="107" y="120" width="33" height="31" fill="#0e0d0d"/>
       <rect class="eye" x="262" y="120" width="32" height="31" fill="#0e0d0d"/>
     </svg></div>
-    <div class="wordmark">Claude Usage Stick<span class="v">🥭 mango v2</span></div>
+    <div class="wordmark">Claude Usage Stick</div>
     <nav>
       <a href="#features">Features</a>
       <a href="#flash">Flash</a>
@@ -587,9 +663,38 @@
         </div>
       </div>
       <div class="screens">
-        <figure><img src="assets/boot.jpg" alt="Boot screen"><figcaption>boot — Clawd says hi</figcaption></figure>
-        <figure><img src="assets/pin.jpg" alt="PIN unlock screen"><figcaption>PIN unlock — buttons only, nothing stored</figcaption></figure>
-        <figure><img src="assets/dashboard.jpg" alt="Usage dashboard"><figcaption>dashboard — bars, countdowns, battery, WiFi</figcaption></figure>
+        <figure>
+          <div class="dev dev-boot" role="img" aria-label="Boot screen: Claude Usage, a progress bar at 95 percent, and the text fetching usage">
+            <i class="ttl dev-t">Claude Usage</i>
+            <i class="track"><i class="fill"></i></i>
+            <i class="pct dev-xs">95%</i>
+            <i class="fetch dev-xs">Fetching usage</i>
+          </div>
+          <figcaption>boot — connecting and fetching usage</figcaption>
+        </figure>
+        <figure>
+          <div class="dev dev-pin" role="img" aria-label="PIN unlock screen: four digit boxes, the first one active, with button hints below">
+            <i class="ttl dev-s">UNLOCK PIN</i>
+            <i class="boxes"><i class="bx on"></i><i class="bx"></i><i class="bx"></i><i class="bx"></i></i>
+            <i class="hint dev-xs"><i>[A] cycle digit</i><i>[B] confirm</i></i>
+          </div>
+          <figcaption>PIN unlock — buttons only, nothing stored</figcaption>
+        </figure>
+        <figure>
+          <div class="dev dev-dash" role="img" aria-label="Dashboard: 5-hour window at 62 percent, 7-day at 31 percent, reset countdowns, and the four model mascots">
+            <i class="bar-hd dev-xs"><i>CLAUDE USAGE</i><i>100%</i></i>
+            <i class="win dev-xs"><i class="fill"></i><i>5-HOUR WINDOW</i><i>62%</i></i>
+            <i class="win dev-xs"><i class="fill d2"></i><i>7-DAY WINDOW</i><i>31%</i></i>
+            <i class="rest dev-xs"><i>24H REST <b>4h34m</b></i><i>7D REST <b>2d15h</b></i></i>
+            <i class="models dev-xs">
+              <span><i class="clawd blink"></i>HAIKU</span>
+              <span><i class="clawd blink"></i>SONNET</span>
+              <span><i class="clawd blink"></i>OPUS</span>
+              <span><i class="clawd blink"></i>FABLE</span>
+            </i>
+          </div>
+          <figcaption>dashboard — bars, countdowns, model health</figcaption>
+        </figure>
       </div>
     </div>
   </section>
