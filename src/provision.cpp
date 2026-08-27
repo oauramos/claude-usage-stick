@@ -12,6 +12,7 @@ static WebServer  webServer(80);
 static DNSServer  dnsServer;
 static Preferences prefs;
 static const byte DNS_PORT = 53;
+static bool       s_reconfig = false;
 
 static const char SETUP_HTML[] PROGMEM = R"rawhtml(<!DOCTYPE html>
 <html lang="en">
@@ -86,6 +87,7 @@ static const char SETUP_HTML[] PROGMEM = R"rawhtml(<!DOCTYPE html>
       <div class="warn">PIN is never stored anywhere. Forget it = factory reset.</div>
     </div>
 
+    <div id="prefs">
     <div class="divider"></div>
     <div class="section-label">Preferences</div>
 
@@ -114,6 +116,7 @@ static const char SETUP_HTML[] PROGMEM = R"rawhtml(<!DOCTYPE html>
       <input id="device_name" name="device_name" maxlength="32"
              placeholder="Claude Monitor" autocomplete="off">
     </div>
+    </div>
 
     <button type="submit" id="btn">Save & Reboot Device</button>
     <div id="status"></div>
@@ -133,6 +136,14 @@ document.getElementById('f').addEventListener('submit',async(e)=>{
     else{st.className='err';st.textContent='Error: '+await r.text();btn.disabled=false;}
   }catch(x){st.className='ok';st.textContent='Device rebooting (connection closed).';}
 });
+fetch('/portal-info').then(r=>r.json()).then(i=>{
+  if(!i.reconfig)return;
+  document.querySelector('h1').textContent='Reconnect WiFi';
+  document.querySelector('.sub').textContent='Update the WiFi details below. Token, PIN and preferences are kept unless you enter new credentials.';
+  document.getElementById('token').required=false;
+  document.getElementById('pin').required=false;
+  document.getElementById('prefs').style.display='none';
+}).catch(()=>{});
 </script>
 </body>
 </html>)rawhtml";
@@ -154,28 +165,36 @@ static void handleProvision() {
     // else would encrypt a token that can never be unlocked.
     bool pinOk = pin.length() == 4;
     for (size_t i = 0; pinOk && i < 4; i++) pinOk = isDigit(pin[i]);
-    if (ssid.isEmpty() || token.isEmpty() || !pinOk) {
-        webServer.send(400, "text/plain", "Missing fields, or PIN is not exactly 4 digits.");
+
+    // Reconfigure mode: token + PIN both empty means "keep the stored blob".
+    bool keepBlob = s_reconfig && token.isEmpty() && pin.isEmpty();
+    if (ssid.isEmpty() || (!keepBlob && (token.isEmpty() || !pinOk))) {
+        webServer.send(400, "text/plain", s_reconfig
+            ? "SSID is required. To replace the token, fill in both token and a 4-digit PIN; leave both empty to keep the stored one."
+            : "Missing fields, or PIN is not exactly 4 digits.");
         return;
     }
 
     EncryptedBlob blob;
-    if (!encryptToken(token.c_str(), pin.c_str(), blob)) {
+    if (!keepBlob && !encryptToken(token.c_str(), pin.c_str(), blob)) {
         webServer.send(500, "text/plain", "Encryption failed.");
         return;
     }
 
-    int pollSec = pollStr.isEmpty() ? DEFAULT_POLL_SEC : constrain(pollStr.toInt(), MIN_POLL_SEC, MAX_POLL_SEC);
-    int bright  = brightStr.isEmpty() ? DEFAULT_BRIGHTNESS : constrain(brightStr.toInt(), 0, 3);
-    if (nameStr.isEmpty()) nameStr = "Claude Monitor";
-
     prefs.begin(NVS_NAMESPACE, false);
     prefs.putString("ssid", ssid);
     prefs.putString("wifipass", wifipass);
-    prefs.putBytes("blob", &blob, sizeof(blob));
-    prefs.putInt("poll_sec", pollSec);
-    prefs.putInt("brightness", bright);
-    prefs.putString("dev_name", nameStr);
+    if (!keepBlob) prefs.putBytes("blob", &blob, sizeof(blob));
+    if (!s_reconfig) {
+        // First-run setup records the preferences too; the reconfigure portal
+        // hides that section and leaves them untouched.
+        int pollSec = pollStr.isEmpty() ? DEFAULT_POLL_SEC : constrain(pollStr.toInt(), MIN_POLL_SEC, MAX_POLL_SEC);
+        int bright  = brightStr.isEmpty() ? DEFAULT_BRIGHTNESS : constrain(brightStr.toInt(), 0, 3);
+        if (nameStr.isEmpty()) nameStr = "Claude Monitor";
+        prefs.putInt("poll_sec", pollSec);
+        prefs.putInt("brightness", bright);
+        prefs.putString("dev_name", nameStr);
+    }
     prefs.putBool("provisioned", true);
     prefs.end();
 
@@ -184,12 +203,18 @@ static void handleProvision() {
     ESP.restart();
 }
 
+static void handlePortalInfo() {
+    webServer.send(200, "application/json",
+                   s_reconfig ? "{\"reconfig\":true}" : "{\"reconfig\":false}");
+}
+
 static void handleNotFound() {
     webServer.sendHeader("Location", "http://192.168.4.1/", true);
     webServer.send(302, "text/plain", "");
 }
 
-void runProvisioningPortal(const char* apName, const char* apPass) {
+void runProvisioningPortal(const char* apName, const char* apPass, bool reconfigure) {
+    s_reconfig = reconfigure;
     WiFi.mode(WIFI_AP);
     WiFi.softAP(apName, apPass);
     delay(100);
@@ -198,10 +223,11 @@ void runProvisioningPortal(const char* apName, const char* apPass) {
 
     webServer.on("/", HTTP_GET, handleRoot);
     webServer.on("/provision", HTTP_POST, handleProvision);
+    webServer.on("/portal-info", HTTP_GET, handlePortalInfo);
     webServer.onNotFound(handleNotFound);
     webServer.begin();
 
-    uiSetupScreen(apName, apPass);
+    uiSetupScreen(apName, apPass, reconfigure);
 
     while (true) {
         dnsServer.processNextRequest();

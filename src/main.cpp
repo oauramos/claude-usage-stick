@@ -7,6 +7,10 @@
  * Dashboard (Mango):   A flips the screen, B cycles brightness, A+B force refresh
  * A+B held on boot: factory reset → wipe NVS → re-enter setup
  *
+ * Boot order differs per board: the T-Display S3 brings WiFi up before the PIN
+ * (the LAN address is shown while locked, and a failed connect falls back to a
+ * WiFi-reconfigure portal); every other board keeps the PIN-first order.
+ *
  * ESP32-C3-OLED wiring (both buttons external, active-LOW to GND):
  *   Button A → GPIO 3     Button B → GPIO 7
  *   SDA → GPIO 5          SCL → GPIO 6
@@ -15,9 +19,10 @@
 
 #include "hal.h"
 #include <WiFi.h>
-#include <Preferences.h>
 #include "config.h"
 #include "crypto.h"
+#include "settings.h"
+#include "app_state.h"
 #include "provision.h"
 #include "api.h"
 #include "ui.h"
@@ -25,15 +30,14 @@
 #include "status.h"
 #endif
 
-static Preferences prefs;
-static char        token[256];
-static UsageData   usage;
+Settings      g_settings;
+UsageData     g_usage;
 #ifdef MANGO_UI
-static ModelStatus modelStatus = {true, true, true, true, false};
+ModelStatus   g_models = {true, true, true, true, false};
 #endif
-static unsigned long lastFetch = 0;
-static int         pollMs     = DEFAULT_POLL_SEC * 1000;
-static uint8_t     brightness = DEFAULT_BRIGHTNESS;
+char          g_token[256];
+bool          g_unlocked = false;
+unsigned long g_lastFetchMs = 0;
 
 // ── PIN Entry (blocks until 4 digits confirmed) ────────
 static void enterPin(char* pinOut, int maxLen) {
@@ -66,6 +70,26 @@ static bool connectWiFi(const char* ssid, const char* pass) {
     return true;
 }
 
+// ── Setup-AP credentials (also used by the WiFi recovery portal) ──
+static void makeApCreds(char* apName, size_t nameLen, char* apPass, size_t passLen) {
+    uint8_t mac[6];
+    esp_efuse_mac_get_default(mac);
+    snprintf(apName, nameLen, "ClaudeMonitor-%02X%02X", mac[4], mac[5]);
+
+#ifdef BOARD_ESP32C3_OLED
+    // No readable display during setup — use open AP so password isn't needed
+    apPass[0] = '\0';
+    Serial.printf("[SETUP] AP: %s (open)\n", apName);
+#else
+    static const char alphabet[] = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    uint8_t rnd[8];
+    esp_fill_random(rnd, sizeof(rnd));
+    size_t n = (passLen > 9) ? 8 : passLen - 1;
+    for (size_t i = 0; i < n; i++) apPass[i] = alphabet[rnd[i] % (sizeof(alphabet) - 1)];
+    apPass[n] = '\0';
+#endif
+}
+
 // ── Sync NTP for reset countdown display ───────────────
 static void syncTime() {
     configTime(0, 0, "pool.ntp.org", "time.nist.gov");
@@ -76,19 +100,94 @@ static void syncTime() {
 // ── Fetch + draw ───────────────────────────────────────
 static void refresh() {
     if (WiFi.status() != WL_CONNECTED) {
-        prefs.begin(NVS_NAMESPACE, true);
-        connectWiFi(prefs.getString("ssid", "").c_str(),
-                    prefs.getString("wifipass", "").c_str());
-        prefs.end();
+        connectWiFi(g_settings.ssid, g_settings.wifipass);
     }
-    fetchUsage(token, usage);
+    fetchUsage(g_token, g_usage);
 #ifdef MANGO_UI
-    fetchModelStatus(modelStatus);   // failure keeps last-known state
-    uiSetModelStatus(modelStatus);
+    fetchModelStatus(g_models);   // failure keeps last-known state
+    uiSetModelStatus(g_models);
 #endif
-    lastFetch = millis();
-    uiDashboard(usage, lastFetch, WiFi.RSSI(), halBatPercent());
+    g_lastFetchMs = millis();
+    uiDashboard(g_usage, g_lastFetchMs, WiFi.RSSI(), halBatPercent());
 }
+
+// ── Boot phases ────────────────────────────────────────
+// PIN + decrypt loop: 10 attempts wipe the credentials, lockout doubles.
+static void unlockPhase(int progressPct) {
+    uiBootProgress(progressPct, "Enter PIN...");
+    delay(300);
+
+    int attempts = 0;
+    while (attempts < MAX_PIN_ATTEMPTS) {
+        char pin[9];
+        enterPin(pin, sizeof(pin));
+
+        if (decryptToken(g_settings.blob, pin, g_token, sizeof(g_token))) break;
+
+        attempts++;
+        if (attempts >= MAX_PIN_ATTEMPTS) {
+            uiError("MAX ATTEMPTS", "Wiping credentials...");
+            settingsWipeAll();
+            delay(3000);
+            ESP.restart();
+        }
+
+        int lockSec = LOCKOUT_BASE_SEC * (1 << (attempts - 1));
+        if (lockSec > 3600) lockSec = 3600;
+        uiLockoutStatic(attempts, MAX_PIN_ATTEMPTS, lockSec);
+        for (int s = lockSec; s > 0; s--) {
+            uiLockoutTick(s);
+            delay(1000);
+        }
+    }
+    g_unlocked = true;
+}
+
+#ifdef BOARD_TDISPLAY_S3
+// WiFi before the PIN on this board: the creds need no PIN, and the device's
+// LAN address is already known (and shown) while it sits locked. A dead network
+// lands in the reconfigure portal instead of the old infinite reboot loop.
+static void netPhase() {
+    char host[33];
+    slugifyHostname(g_settings.devName, host, sizeof(host));
+    WiFi.mode(WIFI_STA);
+    WiFi.setHostname(host);   // must precede WiFi.begin to land in the DHCP lease
+
+    uiBootProgress(60, "Connecting WiFi...");
+    int tries = 0;
+    while (!connectWiFi(g_settings.ssid, g_settings.wifipass)) {
+        if (++tries >= 3) {
+            char apName[24], apPass[9];
+            makeApCreds(apName, sizeof(apName), apPass, sizeof(apPass));
+            runProvisioningPortal(apName, apPass, true);   // never returns
+        }
+        uiError("WIFI FAILED", "Retrying...");
+        delay(2000);
+    }
+
+    uiBootProgress(70, "Syncing time...");
+    syncTime();
+    settingsApplyTZ(g_settings.tzMin);
+
+    char url[40];
+    snprintf(url, sizeof(url), "http://%s", WiFi.localIP().toString().c_str());
+    uiSetNetInfo(url);
+    uiSetHeaderLabel(g_settings.devName);
+}
+#else
+static void netPhaseLegacy() {
+    uiBootProgress(80, "Connecting WiFi...");
+    if (!connectWiFi(g_settings.ssid, g_settings.wifipass)) {
+        uiError("WIFI FAILED", g_settings.ssid);
+        delay(5000);
+        ESP.restart();
+    }
+
+    uiBootProgress(90, "Syncing time...");
+    syncTime();
+    settingsApplyTZ(g_settings.tzMin);
+}
+#endif
 
 // ── Setup ──────────────────────────────────────────────
 void setup() {
@@ -115,41 +214,19 @@ void setup() {
         }
         if (held) {
             uiBootProgress(50, "Factory reset...");
-            prefs.begin(NVS_NAMESPACE, false);
-            prefs.clear();
-            prefs.end();
+            settingsWipeAll();
             uiError("NVS WIPED", "Rebooting in 2s...");
             delay(2000);
             ESP.restart();
         }
     }
 
-    // Check provisioned
-    prefs.begin(NVS_NAMESPACE, true);
-    bool provisioned = prefs.getBool("provisioned", false);
-    prefs.end();
-
-    if (!provisioned) {
+    if (!settingsIsProvisioned()) {
         uiBootProgress(50, "No config found");
         delay(400);
 
-        uint8_t mac[6];
-        esp_efuse_mac_get_default(mac);
-        char apName[24];
-        snprintf(apName, sizeof(apName), "ClaudeMonitor-%02X%02X", mac[4], mac[5]);
-
-#ifdef BOARD_ESP32C3_OLED
-        // No readable display during setup — use open AP so password isn't needed
-        const char* apPass = "";
-        Serial.printf("[SETUP] AP: %s (open)\n", apName);
-#else
-        static const char alphabet[] = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        uint8_t rnd[8];
-        esp_fill_random(rnd, sizeof(rnd));
-        char apPass[9];
-        for (int i = 0; i < 8; i++) apPass[i] = alphabet[rnd[i] % (sizeof(alphabet) - 1)];
-        apPass[8] = '\0';
-#endif
+        char apName[24], apPass[9];
+        makeApCreds(apName, sizeof(apName), apPass, sizeof(apPass));
         runProvisioningPortal(apName, apPass);
         return;
     }
@@ -157,54 +234,19 @@ void setup() {
     uiBootProgress(50, "Config loaded");
     delay(200);
 
-    // Load NVS
-    prefs.begin(NVS_NAMESPACE, true);
-    String ssid = prefs.getString("ssid", "");
-    String pass = prefs.getString("wifipass", "");
-    EncryptedBlob blob;
-    prefs.getBytes("blob", &blob, sizeof(blob));
-    pollMs     = prefs.getInt("poll_sec", DEFAULT_POLL_SEC) * 1000;
-    brightness = prefs.getInt("brightness", DEFAULT_BRIGHTNESS);
-    prefs.end();
+    settingsLoad(g_settings);
+    halSetBrightness(g_settings.brightness);
+#ifdef MANGO_UI
+    if (g_settings.flip) uiApplyRotation(true);
+#endif
 
-    halSetBrightness(brightness);
-
-    uiBootProgress(60, "Enter PIN...");
-    delay(300);
-
-    // PIN + decrypt loop
-    int attempts = 0;
-    while (attempts < MAX_PIN_ATTEMPTS) {
-        char pin[9];
-        enterPin(pin, sizeof(pin));
-
-        if (decryptToken(blob, pin, token, sizeof(token))) break;
-
-        attempts++;
-        if (attempts >= MAX_PIN_ATTEMPTS) {
-            uiError("MAX ATTEMPTS", "Wiping credentials...");
-            prefs.begin(NVS_NAMESPACE, false);
-            prefs.clear();
-            prefs.end();
-            delay(3000);
-            ESP.restart();
-        }
-
-        int lockSec = LOCKOUT_BASE_SEC * (1 << (attempts - 1));
-        if (lockSec > 3600) lockSec = 3600;
-        uiLockout(attempts, MAX_PIN_ATTEMPTS, lockSec);
-    }
-
-    uiBootProgress(80, "Connecting WiFi...");
-
-    if (!connectWiFi(ssid.c_str(), pass.c_str())) {
-        uiError("WIFI FAILED", ssid.c_str());
-        delay(5000);
-        ESP.restart();
-    }
-
-    uiBootProgress(90, "Syncing time...");
-    syncTime();
+#ifdef BOARD_TDISPLAY_S3
+    netPhase();
+    unlockPhase(85);
+#else
+    unlockPhase(60);
+    netPhaseLegacy();
+#endif
 
     uiBootProgress(95, "Fetching usage...");
     refresh();
@@ -229,21 +271,25 @@ void loop() {
         refresh();
     } else if (aPressAt && millis() - aPressAt > comboWindowMs) {
         aPressAt = 0;
-        uiToggleRotation();
-        uiDashboard(usage, lastFetch, WiFi.RSSI(), halBatPercent());
+        g_settings.flip = !g_settings.flip;
+        uiApplyRotation(g_settings.flip);
+        settingsPutU8("flip", g_settings.flip);
+        uiDashboard(g_usage, g_lastFetchMs, WiFi.RSSI(), halBatPercent());
     } else if (bPressAt && millis() - bPressAt > comboWindowMs) {
         bPressAt = 0;
-        brightness = (brightness + 1) % 4;
-        halSetBrightness(brightness);
+        g_settings.brightness = (g_settings.brightness + 1) % 4;
+        halSetBrightness(g_settings.brightness);
+        settingsPutInt("brightness", g_settings.brightness);
     }
 #else
     if (halBtnAWasPressed()) {
 #ifdef BOARD_ESP32C3_OLED
-        brightness = (brightness + 1) % 2; // on/off only — contrast change imperceptible
+        g_settings.brightness = (g_settings.brightness + 1) % 2; // on/off only — contrast change imperceptible
 #else
-        brightness = (brightness + 1) % 4;
+        g_settings.brightness = (g_settings.brightness + 1) % 4;
 #endif
-        halSetBrightness(brightness);
+        halSetBrightness(g_settings.brightness);
+        settingsPutInt("brightness", g_settings.brightness);
     }
 
     if (halBtnBWasPressed()) {
@@ -251,7 +297,7 @@ void loop() {
     }
 #endif
 
-    if (millis() - lastFetch >= (unsigned long)pollMs) {
+    if (millis() - g_lastFetchMs >= (unsigned long)g_settings.pollSec * 1000UL) {
         refresh();
     }
 
@@ -262,7 +308,7 @@ void loop() {
     if (eyesClosed && millis() - lastBlink > 150) {
         uiBlinkTick(false);
         eyesClosed = false;
-    } else if (!eyesClosed && usage.ok && millis() - lastBlink > 2000) {
+    } else if (!eyesClosed && g_usage.ok && millis() - lastBlink > 2000) {
         uiBlinkTick(true);
         eyesClosed = true;
         lastBlink = millis();
@@ -273,7 +319,7 @@ void loop() {
     if (millis() - lastRedraw > 10000) {
         // Only time passed (not data) — update the clock/countdowns in place; redrawing
         // the whole dashboard here is what made the slow CrowPanel panel flicker.
-        uiDashboardClock(usage, lastFetch, WiFi.RSSI());
+        uiDashboardClock(g_usage, g_lastFetchMs, WiFi.RSSI());
         lastRedraw = millis();
     }
 
