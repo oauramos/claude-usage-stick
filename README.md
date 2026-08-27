@@ -180,4 +180,4 @@ Real builds in the wild. Got a Claude Usage Stick on your desk? PRs with photos 
 
 ## 📄 License
 
-MIT
+[MIT](LICENSE)
