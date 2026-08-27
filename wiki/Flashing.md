@@ -40,14 +40,11 @@ or use the Python fallback included in the repo:
 python3 upload_data.py
 ```
 
-### Known build issues
+### If a build fails
 
-Two envs currently fail to build in some environments for reasons unrelated to the firmware itself:
+All eight envs build in CI. If one fails locally, it's usually the toolchain rather than the firmware — a known one is **`tdisplay-s3-amoled`**, which can fail while generating `bootloader.bin` if the Python running PlatformIO lacks the `intelhex` module (`pip install intelhex`).
 
-- **`m5stick-cplus2`** — a dependency pin conflict
-- **`tdisplay-s3-amoled`** — an `intelhex` failure in the LilyGo AMOLED toolchain
-
-These are environmental, not regressions. When they fail in CI, the affected board simply shows as *build pending* on the web flasher; every other board still deploys.
+CI treats each board independently: a board that fails to build is left out of the deploy and shows as *build pending* on the web flasher, while every other board still ships.
 
 ## After flashing
 
