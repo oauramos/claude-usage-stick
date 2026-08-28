@@ -3,6 +3,7 @@
 **Using it**
 - [Features](Features)
 - [The UI](The-UI)
+- [Web panel](Web-Panel)
 - [Setup and daily use](Setup-and-Daily-Use)
 - [Troubleshooting](Troubleshooting)
 

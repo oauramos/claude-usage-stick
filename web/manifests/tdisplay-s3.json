@@ -1,6 +1,6 @@
 {
   "name": "Claude Usage Stick \u2014 LilyGo T-Display S3",
-  "version": "2.1.1",
+  "version": "3.0.0",
   "new_install_prompt_erase": true,
   "builds": [
     {

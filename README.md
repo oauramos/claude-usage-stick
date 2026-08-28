@@ -11,7 +11,7 @@
 
 <img src="https://github.com/user-attachments/assets/c51c5a9e-5a3e-4c3e-97a8-d5a4c5a44263" width="720" alt="Claude Usage Stick — PIN unlock screen and usage dashboard on a LilyGo T-Display S3"/>
 
-*5-hour & 7-day usage windows · reset countdowns · model health mascots · PIN-encrypted token*
+*5-hour & 7-day usage windows · reset countdowns · model health mascots · PIN-encrypted token · web control panel · screen carousel with 7-day chart, Anthropic news & clock (✨ Dust, v3)*
 
 </div>
 
@@ -32,7 +32,6 @@ git clone https://github.com/oauramos/claude-usage-stick.git
 cd claude-usage-stick
 
 pio run -e <env> -t upload      # firmware
-pio run -e <env> -t uploadfs    # web setup UI (SPIFFS)
 ```
 
 Needs the [PlatformIO CLI](https://platformio.org/install/cli). Board envs are listed in [Supported boards](https://github.com/oauramos/claude-usage-stick/wiki/Supported-Boards).
@@ -47,6 +46,7 @@ Everything lives in the **[wiki](https://github.com/oauramos/claude-usage-stick/
 | --- | --- |
 | [Features](https://github.com/oauramos/claude-usage-stick/wiki/Features) | What the device shows |
 | [The UI](https://github.com/oauramos/claude-usage-stick/wiki/The-UI) | Firmware versions and display tiers |
+| [Web panel](https://github.com/oauramos/claude-usage-stick/wiki/Web-Panel) | The in-browser control panel (✨ Dust boards) |
 | [Supported boards](https://github.com/oauramos/claude-usage-stick/wiki/Supported-Boards) | The lineup, with a guide for each board |
 | [Flashing](https://github.com/oauramos/claude-usage-stick/wiki/Flashing) | Web flasher and building from source |
 | [Setup and daily use](https://github.com/oauramos/claude-usage-stick/wiki/Setup-and-Daily-Use) | Captive-portal setup, PIN, controls |

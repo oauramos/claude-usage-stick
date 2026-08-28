@@ -23,7 +23,6 @@ From source, with the [PlatformIO CLI](https://platformio.org/install/cli):
 
 ```bash
 pio run -e t8-s2 -t upload     # firmware
-pio run -e t8-s2 -t uploadfs   # web setup UI (SPIFFS)
 ```
 
 ## Controls — one button, two roles

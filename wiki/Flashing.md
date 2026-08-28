@@ -23,21 +23,6 @@ git clone https://github.com/oauramos/claude-usage-stick.git
 cd claude-usage-stick
 
 pio run -e <env> -t upload      # firmware
-pio run -e <env> -t uploadfs    # web setup UI (SPIFFS)
-```
-
-### Apple Silicon note
-
-If `uploadfs` fails with *"Bad CPU type"*, the bundled mkspiffs binary is x86-only. Either install Rosetta:
-
-```bash
-softwareupdate --install-rosetta
-```
-
-or use the Python fallback included in the repo:
-
-```bash
-python3 upload_data.py
 ```
 
 ### If a build fails
