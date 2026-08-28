@@ -66,8 +66,12 @@ locally and, in a Playwright session:
    pin the usage bars' widths, which rest at 0;
 2. clone-and-replace the node the site's `requestAnimationFrame` loop rotates, so it
    stops fighting you, then set `transform: rotateY(<angle>deg)` yourself;
-3. screenshot `.hero` for 48 angles across 360°;
-4. `ffmpeg -framerate 12 -i f%03d.png … palettegen/paletteuse` → ~600 KB at 900 px wide.
+3. screenshot 48 angles across 360° with `page.screenshot({clip})` — the hero's own
+   rect widened by ~44 px on each side. Pad horizontally only: the site header sits
+   flush on top of the hero and the chips row flush below it, so vertical padding
+   slices both in half;
+4. `ffmpeg -framerate 12 -i f%03d.png … palettegen/paletteuse -loop 0` → ~570 KB at
+   900 px wide. GIFs autoplay and loop on their own; there is no parameter for it.
 
 ## Flash offsets
 
