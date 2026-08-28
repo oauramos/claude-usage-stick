@@ -388,6 +388,23 @@
   .hero-stage .b3d-glow { width: 230px; height: 24px; bottom: 16px; filter: blur(5px); }
   .b3d-scale { display: block; transform-style: preserve-3d; }
   .b3d .scr.scr-img { background-size: 100% 100%; image-rendering: pixelated; border-color: #4a423a; }
+  /* hero screen: the live CSS dashboard inside the 3D case, so it can never
+     drift from the firmware the way a screenshot does */
+  .b3d .scr.scr-live { padding: 0; border-color: #4a423a; overflow: hidden; }
+  /* .b3d i is absolutely positioned for the cuboid's own details; the screen's
+     recreation is a normal flex layout, so put its elements back in flow */
+  /* :where() keeps this blanket at zero specificity so the two exceptions
+     below can still win — .b3d i would otherwise absolutely-position the
+     whole recreation and collapse its flex layout */
+  .b3d .scr-live :where(.dev, .dev i, .dev span) { position: static; }
+  .b3d .scr-live .win, .b3d .scr-live .clawd { position: relative; }
+  .b3d .scr-live .win .fill { position: absolute; }
+  .b3d .scr-live .dev {
+    /* .b3d i wins on specificity over .dev, so restate the flex column here */
+    display: flex; flex-direction: column;
+    width: 100%; height: 100%; aspect-ratio: auto;
+    border: 0; border-radius: 0; padding: 7px 9px;
+  }
   /* molded-case look for the hero board */
   .b3d-case .face { border-radius: 12px; }
   .b3d .grille { background: repeating-linear-gradient(90deg, rgba(0,0,0,.45) 0 4px, transparent 4px 10px); border-radius: 3px; }
