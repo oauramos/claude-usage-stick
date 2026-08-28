@@ -27,6 +27,9 @@
 #include "api.h"
 #include "ui.h"
 #include "panel.h"
+#include "screens.h"
+#include "history.h"
+#include "news.h"
 #ifdef MANGO_UI
 #include "status.h"
 #endif
@@ -116,7 +119,11 @@ static void refresh() {
     uiSetModelStatus(g_models);
 #endif
     g_lastFetchMs = millis();
+#ifdef BOARD_TDISPLAY_S3
+    screensOnData();   // records history + redraws whichever screen shows it
+#else
     uiDashboard(g_usage, g_lastFetchMs, WiFi.RSSI(), halBatPercent());
+#endif
 }
 
 // ── Boot phases ────────────────────────────────────────
@@ -267,7 +274,10 @@ void setup() {
 
 #ifdef BOARD_TDISPLAY_S3
     netPhase();
+    uiBootProgress(78, "Preparing storage...");
+    historyInit();   // first boot formats the data partition (~1-3s)
     unlockPhase(85);
+    screensInit();
 #else
     unlockPhase(60);
     netPhaseLegacy();
@@ -286,19 +296,67 @@ void loop() {
     panelConsumeUnlock();   // post-boot logins don't need the boot-phase handoff
     uint8_t acts = panelTakeAction();
     if (acts & PANEL_ACT_FACTORY_RESET) {
+        historyErase();
         settingsWipeAll();
         ESP.restart();
     }
     if (acts & PANEL_ACT_REBOOT) ESP.restart();
-    if (acts & PANEL_ACT_FLIP) uiApplyRotation(g_settings.flip);
-    if (acts & PANEL_ACT_REFRESH) {
-        refresh();
-    } else if (acts & (PANEL_ACT_REDRAW | PANEL_ACT_FLIP)) {
-        uiDashboard(g_usage, g_lastFetchMs, WiFi.RSSI(), halBatPercent());
-    }
+    if (acts & PANEL_ACT_REFRESH) refresh();
+    if (acts & (PANEL_ACT_REDRAW | PANEL_ACT_FLIP)) screensOnSettings();
 #endif
 
-#ifdef MANGO_UI
+#ifdef BOARD_TDISPLAY_S3
+    // A short = next screen · A held ≥600ms = flip · B = brightness ·
+    // A+B = force refresh. Latches keep each gesture firing exactly once;
+    // every gesture pauses the carousel for 10s.
+    {
+        static unsigned long aDownAt = 0, bPressAt = 0;
+        static bool aLong = false, aCombo = false;
+        bool aEdge = halBtnAWasPressed();
+        bool bEdge = halBtnBWasPressed();
+        bool aHeld = halBtnAIsPressed();
+        bool bHeld = halBtnBIsPressed();
+
+        if (aEdge) { aDownAt = millis(); aLong = false; aCombo = false; }
+        if (aDownAt) {
+            if (!aCombo && !aLong && (bEdge || bHeld)) {
+                aCombo = true;
+                bPressAt = 0;
+                screensPause(10000);
+                refresh();
+            } else if (!aCombo && !aLong && aHeld && millis() - aDownAt >= 600) {
+                aLong = true;
+                g_settings.flip = !g_settings.flip;
+                settingsPutU8("flip", g_settings.flip);
+                screensPause(10000);
+                screensOnSettings();   // applies rotation + redraws
+            }
+            if (!aHeld) {
+                if (!aLong && !aCombo && millis() - aDownAt < 600) {
+                    screensPause(10000);
+                    screensNext();
+                }
+                aDownAt = 0;
+            }
+        } else if (bEdge) {
+            bPressAt = millis();
+        }
+        if (bPressAt) {
+            if (aHeld || aEdge) {   // A joined a pending B press — combo
+                bPressAt = 0;
+                aDownAt = 0;        // consume A so release doesn't also advance
+                screensPause(10000);
+                refresh();
+            } else if (millis() - bPressAt > 350) {
+                bPressAt = 0;
+                g_settings.brightness = (g_settings.brightness + 1) % 4;
+                halSetBrightness(g_settings.brightness);
+                settingsPutInt("brightness", g_settings.brightness);
+                screensPause(10000);
+            }
+        }
+    }
+#elif defined(MANGO_UI)
     // A flips the screen 180°, B cycles brightness, A+B together = force refresh
     // (the Clarity Button-B action). A single press only commits after a short
     // window so the other button can still join to form the combo.
@@ -347,16 +405,27 @@ void loop() {
     // Healthy mascots blink every 2s (eyes shut for 150ms) to show liveness.
     static unsigned long lastBlink = 0;
     static bool eyesClosed = false;
-    if (eyesClosed && millis() - lastBlink > 150) {
+#ifdef BOARD_TDISPLAY_S3
+    // Blinking draws at mascot coordinates — only valid on the dashboard.
+    bool blinkScreen = screensCurrent() == SCR_DASH;
+    if (!blinkScreen) eyesClosed = false;   // a screen change redrew them open
+#else
+    const bool blinkScreen = true;
+#endif
+    if (blinkScreen && eyesClosed && millis() - lastBlink > 150) {
         uiBlinkTick(false);
         eyesClosed = false;
-    } else if (!eyesClosed && g_usage.ok && millis() - lastBlink > 2000) {
+    } else if (blinkScreen && !eyesClosed && g_usage.ok && millis() - lastBlink > 2000) {
         uiBlinkTick(true);
         eyesClosed = true;
         lastBlink = millis();
     }
 #endif
 
+#ifdef BOARD_TDISPLAY_S3
+    screensTick();                        // carousel dwell + 10s header beat + clock minute
+    if (newsTick()) screensOnNews();      // blocks 2-5s only when a fetch is due
+#else
     static unsigned long lastRedraw = 0;
     if (millis() - lastRedraw > 10000) {
         // Only time passed (not data) — update the clock/countdowns in place; redrawing
@@ -364,6 +433,7 @@ void loop() {
         uiDashboardClock(g_usage, g_lastFetchMs, WiFi.RSSI());
         lastRedraw = millis();
     }
+#endif
 
     delay(20);
 }

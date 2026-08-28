@@ -3,6 +3,8 @@
 #ifdef MANGO_UI
 #include "status.h"
 #endif
+#include "history.h"   // self-guarded: empty on non-S3 boards
+#include "news.h"
 
 void uiInit();
 void uiBootProgress(int percent, const char* label);
@@ -24,6 +26,15 @@ void uiLockoutTick(int secondsLeft);
 void uiSetNetInfo(const char* url);
 // Header label (from dev_name, uppercased); empty falls back to "CLAUDE USAGE".
 void uiSetHeaderLabel(const char* name);
+// Which model mascots render (bit per model, panel setting).
+void uiSetModelMask(uint8_t mask);
+// Flip the header's left text between label and URL (screensTick's 10s beat).
+void uiHeaderAlternate();
+// v3 carousel screens — all sprite-rendered, full-push, flicker-free.
+void uiChartScreen(const HistSlot* slots, uint32_t newestEpoch,
+                   unsigned long lastFetchMs, int rssi);
+void uiNewsScreen(const NewsState& news, unsigned long lastFetchMs, int rssi);
+void uiClockScreen(const UsageData& data, unsigned long lastFetchMs, int rssi);
 #endif
 #ifdef MANGO_UI
 // Latest model health for the dashboard's mascot row; cached until the next call.

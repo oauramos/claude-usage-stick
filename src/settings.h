@@ -17,6 +17,10 @@ struct Settings {
     char          devName[33];
     int32_t       tzMin;        // i32, minutes east of UTC, -840..840
     uint8_t       flip;         // u8, persisted 180° screen rotation
+    uint8_t       uiMode;       // u8, 0=static (dash) 1=carousel 2=clock
+    uint8_t       dwellS;       // u8, carousel dwell: 5/10/15/30 s
+    uint8_t       scrMask;      // u8, carousel screen set (bit per Screen)
+    uint8_t       mdlMask;      // u8, which model mascots render (bit per model)
 };
 
 bool settingsIsProvisioned();

@@ -15,6 +15,8 @@
 #include "api.h"
 #include "hal.h"
 #include "ui.h"
+#include "history.h"
+#include "news.h"
 #include "panel_html.h"
 
 // ── Handler rules (single-threaded reentrancy contract) ──────────────────
@@ -252,6 +254,15 @@ static void handleState() {
     c["tz_min"]     = g_settings.tzMin;
     c["dev_name"]   = g_settings.devName;
     c["flip"]       = g_settings.flip;
+    c["ui_mode"]    = g_settings.uiMode;
+    c["dwell_s"]    = g_settings.dwellS;
+    c["scr_mask"]   = g_settings.scrMask;
+    c["mdl_mask"]   = g_settings.mdlMask;
+
+    JsonObject nw = d["news"].to<JsonObject>();
+    nw["count"]         = g_news.count;
+    nw["fetched_epoch"] = g_news.fetchedAtEpoch;
+    nw["ok"]            = g_news.ok;
 
     sendJson(200, d);
 }
@@ -296,9 +307,90 @@ static void handleSettings() {
         s_actions |= PANEL_ACT_FLIP;               // rotation + redraw happen in loop()
         applied["flip"] = g_settings.flip;
     }
+    if (body["ui_mode"].is<int>()) {
+        g_settings.uiMode = constrain(body["ui_mode"].as<int>(), 0, 2);
+        settingsPutU8("ui_mode", g_settings.uiMode);
+        applied["ui_mode"] = g_settings.uiMode;
+        s_actions |= PANEL_ACT_REDRAW;             // re-pins the mode's screen
+    }
+    if (body["dwell_s"].is<int>()) {
+        int dw = body["dwell_s"].as<int>();
+        if (dw != 5 && dw != 10 && dw != 15 && dw != 30) dw = 10;
+        g_settings.dwellS = (uint8_t)dw;
+        settingsPutU8("dwell_s", g_settings.dwellS);
+        applied["dwell_s"] = g_settings.dwellS;
+    }
+    if (body["scr_mask"].is<int>()) {
+        uint8_t m = body["scr_mask"].as<int>() & 0x0F;
+        g_settings.scrMask = m ? m : 0x01;         // carousel can never be empty
+        settingsPutU8("scr_mask", g_settings.scrMask);
+        applied["scr_mask"] = g_settings.scrMask;
+    }
+    if (body["mdl_mask"].is<int>()) {
+        uint8_t m = body["mdl_mask"].as<int>() & 0x0F;
+        g_settings.mdlMask = m ? m : 0x0F;
+        settingsPutU8("mdl_mask", g_settings.mdlMask);
+        applied["mdl_mask"] = g_settings.mdlMask;
+        s_actions |= PANEL_ACT_REDRAW;
+    }
 
     sendJson(200, d);
 }
+
+static void handleHistory() {
+    if (!requireAuth()) return;
+    static HistSlot slots[HIST_SLOTS];
+    uint32_t newest;
+    historySnapshot(slots, newest);
+
+    // Hand-built JSON: 2×336 numbers would bloat an ArduinoJson doc for no gain.
+    String out;
+    out.reserve(HIST_SLOTS * 9 + 96);
+    out += "{\"slot_sec\":1800,\"newest_epoch\":";
+    out += newest;
+    out += ",\"h5\":[";
+    for (int i = 0; i < HIST_SLOTS; i++) {
+        if (i) out += ',';
+        if (slots[i].h5 == HIST_EMPTY) out += "null";
+        else out += (int)slots[i].h5;
+    }
+    out += "],\"d7\":[";
+    for (int i = 0; i < HIST_SLOTS; i++) {
+        if (i) out += ',';
+        if (slots[i].d7 == HIST_EMPTY) out += "null";
+        else out += (int)slots[i].d7;
+    }
+    out += "]}";
+    s_server.send(200, "application/json", out);
+}
+
+static void handleNews() {
+    if (!requireAuth()) return;
+    JsonDocument d;
+    d["ok"]            = g_news.ok;
+    d["fetched_epoch"] = g_news.fetchedAtEpoch;
+    JsonArray arr = d["items"].to<JsonArray>();
+    for (int i = 0; i < g_news.count; i++) {
+        JsonObject o = arr.add<JsonObject>();
+        o["title"] = g_news.items[i].title;
+        o["date"]  = g_news.items[i].date;
+    }
+    sendJson(200, d);
+}
+
+#ifdef PANEL_DEBUG
+static void handleSeedHistory() {
+    if (!requireAuth()) return;
+    JsonDocument body;
+    if (!requireJsonBody(body)) return;
+    bool clear = body["clear"] | false;
+    historySeedDemo(clear);
+    s_actions |= PANEL_ACT_REDRAW;
+    JsonDocument d;
+    d["seeded"] = !clear;
+    sendJson(200, d);
+}
+#endif
 
 static void handleRefresh() {
     if (!requireAuth()) return;
@@ -458,6 +550,11 @@ void panelBegin(const char* hostname) {
     s_server.on("/api/wifi/scan", HTTP_GET, handleWifiScan);
     s_server.on("/api/wifi", HTTP_POST, handleWifiSet);
     s_server.on("/api/reset", HTTP_POST, handleReset);
+    s_server.on("/api/history", HTTP_GET, handleHistory);
+    s_server.on("/api/news", HTTP_GET, handleNews);
+#ifdef PANEL_DEBUG
+    s_server.on("/api/debug/seed-history", HTTP_POST, handleSeedHistory);
+#endif
     s_server.onNotFound(handleNotFound);
     s_server.begin();
 }

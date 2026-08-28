@@ -24,6 +24,12 @@ void settingsLoad(Settings& s) {
     prefs.getString("dev_name", s.devName, sizeof(s.devName));
     s.tzMin      = constrain(prefs.getInt("tz_min", 0), -840, 840);
     s.flip       = prefs.getUChar("flip", 0) ? 1 : 0;
+    s.uiMode     = constrain(prefs.getUChar("ui_mode", 0), 0, 2);
+    s.dwellS     = prefs.getUChar("dwell_s", 10);
+    if (s.dwellS != 5 && s.dwellS != 10 && s.dwellS != 15 && s.dwellS != 30) s.dwellS = 10;
+    s.scrMask    = prefs.getUChar("scr_mask", 0x07) & 0x0F;
+    if (s.scrMask == 0) s.scrMask = 0x01;   // carousel can never be empty
+    s.mdlMask    = prefs.getUChar("mdl_mask", 0x0F) & 0x0F;
     prefs.end();
 }
 
