@@ -124,7 +124,7 @@ static const char SETUP_HTML[] PROGMEM = R"rawhtml(<!DOCTYPE html>
     <div id="status"></div>
   </form>
   <div class="footer">Claude Usage Stick · made by
-    <a href="https://github.com/oauramos">Otávio Ramos</a></div>
+    <a href="https://github.com/oauramos">@oauramos</a></div>
 </div>
 
 <script>
