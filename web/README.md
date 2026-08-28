@@ -9,9 +9,7 @@ from Chrome or Edge over Web Serial, no toolchain required.
 web/
   index.html            — generated; edit src/template.html instead
   manifests/<env>.json  — generated; one esp-web-tools manifest per board
-  assets/               — photos used by the page (the hero's device screen is
-                          the live CSS recreation, not an image, so it can't
-                          drift from the firmware)
+  assets/               — photos and the dashboard screenshot used by the page
   firmware/             — published by CI, git-ignored locally
     <env>/{bootloader,partitions,boot_app0,firmware}.bin
     available.json      — envs that built successfully; the page grays out the rest
