@@ -123,6 +123,13 @@
     font-size: 13px;
   }
   .netlist li:hover, .netlist li.sel { border-color: var(--coral); background: var(--surface-2); }
+  .checks { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .checks label { display: flex; align-items: center; gap: 6px; margin: 2px 0; font-size: 13px; color: var(--text); }
+  .checks input { width: auto; }
+  .news { list-style: none; margin: 0; padding: 0; }
+  .news li { padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+  .news li:last-child { border-bottom: 0; }
+  .news .nd { color: var(--text-faint); font-family: var(--font-mono); font-size: 11px; margin-top: 2px; }
 
   /* ── login overlay ── */
   #login {
@@ -222,6 +229,57 @@
   </section>
 
   <section class="card">
+    <h2>Screens</h2>
+    <label>Mode</label>
+    <select id="selMode">
+      <option value="0">Static — dashboard only</option>
+      <option value="1">Carousel — auto-rotate screens</option>
+      <option value="2">Clock — desk clock</option>
+    </select>
+    <div class="row2">
+      <div>
+        <label for="selDwell">Carousel dwell</label>
+        <select id="selDwell">
+          <option value="5">5 s</option><option value="10">10 s</option>
+          <option value="15">15 s</option><option value="30">30 s</option>
+        </select>
+      </div>
+    </div>
+    <label>Screens in the carousel</label>
+    <div class="checks" id="scrChecks">
+      <label><input type="checkbox" data-bit="0">Dashboard</label>
+      <label><input type="checkbox" data-bit="1">7-day chart</label>
+      <label><input type="checkbox" data-bit="2">News</label>
+      <label><input type="checkbox" data-bit="3">Clock</label>
+    </div>
+    <label>Model mascots shown</label>
+    <div class="checks" id="mdlChecks">
+      <label><input type="checkbox" data-bit="0">Haiku</label>
+      <label><input type="checkbox" data-bit="1">Sonnet</label>
+      <label><input type="checkbox" data-bit="2">Opus</label>
+      <label><input type="checkbox" data-bit="3">Fable</label>
+    </div>
+    <button id="btnScreens">Apply</button>
+    <div class="status" id="scrStatus"></div>
+    <p class="faint" style="margin:6px 0 0">Button A on the device steps through
+       every screen in any mode.</p>
+  </section>
+
+  <section class="card wide">
+    <h2>7-day history</h2>
+    <div class="screenish">
+      <canvas id="histCanvas" style="width:100%;height:180px;display:block"></canvas>
+    </div>
+    <div class="status" id="histStatus"></div>
+    <button class="ghost" id="btnHist">Reload chart</button>
+  </section>
+
+  <section class="card wide">
+    <h2>Anthropic news</h2>
+    <ul class="news" id="newsList"><li class="muted">Not fetched yet.</li></ul>
+  </section>
+
+  <section class="card">
     <h2>Claude token</h2>
     <p class="faint" style="margin:0 0 6px">The stored token is write-only: it can be
        replaced here but never read back, by design.</p>
@@ -299,6 +357,7 @@ $('loginForm').addEventListener('submit', async e => {
     $('login').classList.add('hidden');
     $('loginPin').value = '';
     st.textContent = '';
+    render.extrasLoaded = false;   // refetch chart + news for the new session
     if (r.unlocked_device) toast('usageStatus', 'Device screen unlocked.', true);
     poll();
   } catch (x) {
@@ -360,8 +419,22 @@ function fmtUptime(s) {
 
 /* ── state polling & render ── */
 let dirty = false;   // a settings field the user is editing shouldn't be clobbered
-['selBright', 'selPoll', 'selTz', 'inName'].forEach(id =>
+['selBright', 'selPoll', 'selTz', 'inName', 'selMode', 'selDwell'].forEach(id =>
   $(id).addEventListener('input', () => dirty = true));
+document.querySelectorAll('#scrChecks input, #mdlChecks input').forEach(cb =>
+  cb.addEventListener('input', () => dirty = true));
+
+function maskGet(boxId) {
+  let m = 0;
+  document.querySelectorAll('#' + boxId + ' input').forEach(cb => {
+    if (cb.checked) m |= 1 << +cb.dataset.bit;
+  });
+  return m;
+}
+function maskSet(boxId, m) {
+  document.querySelectorAll('#' + boxId + ' input').forEach(cb =>
+    cb.checked = !!(m & (1 << +cb.dataset.bit)));
+}
 
 function render(s) {
   $('hHost').textContent = s.hostname + '.local';
@@ -392,7 +465,88 @@ function render(s) {
     $('selPoll').value = c.poll_sec;
     $('selTz').value = c.tz_min;
     $('inName').value = c.dev_name || '';
+    $('selMode').value = c.ui_mode ?? 0;
+    $('selDwell').value = c.dwell_s ?? 10;
+    maskSet('scrChecks', c.scr_mask ?? 7);
+    maskSet('mdlChecks', c.mdl_mask ?? 15);
   }
+
+  if (!render.extrasLoaded) {
+    render.extrasLoaded = true;
+    loadHistory();
+    loadNews();
+  }
+}
+
+/* ── 7-day history chart ── */
+function loadHistory() {
+  api('/api/history').then(h => {
+    const cv = $('histCanvas');
+    const W = cv.clientWidth || 660, H = 180;
+    cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio;
+    const ctx = cv.getContext('2d');
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    const css = getComputedStyle(document.documentElement);
+    const col = n => css.getPropertyValue(n).trim();
+    const px0 = 30, px1 = W - 8, py0 = 8, py1 = H - 18;
+    ctx.clearRect(0, 0, W, H);
+    ctx.font = '10px ' + col('--font-mono');
+    for (const p of [0, 50, 100]) {
+      const y = py1 - (py1 - py0) * p / 100;
+      ctx.strokeStyle = col('--line-soft'); ctx.beginPath();
+      ctx.moveTo(px0, y); ctx.lineTo(px1, y); ctx.stroke();
+      ctx.fillStyle = col('--text-faint');
+      ctx.fillText(p, 4, y + 3);
+    }
+    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const n = h.h5.length;
+    let prevDay = -1;
+    for (let i = 0; i < n; i++) {
+      const d = new Date((h.newest_epoch - (n - i) * h.slot_sec) * 1000);
+      if (prevDay >= 0 && d.getDay() !== prevDay) {
+        const x = px0 + (px1 - px0) * i / (n - 1);
+        ctx.strokeStyle = col('--line-soft'); ctx.beginPath();
+        ctx.moveTo(x, py0); ctx.lineTo(x, py1); ctx.stroke();
+        ctx.fillStyle = col('--text-faint');
+        ctx.fillText(days[d.getDay()], x - 3, H - 6);
+      }
+      prevDay = d.getDay();
+    }
+    const plot = (arr, color, width) => {
+      ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath();
+      let pen = false;
+      for (let i = 0; i < n; i++) {
+        if (arr[i] == null) { pen = false; continue; }
+        const x = px0 + (px1 - px0) * i / (n - 1);
+        const y = py1 - (py1 - py0) * arr[i] / 100;
+        pen ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        pen = true;
+      }
+      ctx.stroke(); ctx.lineWidth = 1;
+    };
+    plot(h.d7, col('--text-faint'), 1.5);
+    plot(h.h5, col('--coral'), 2);
+    const any = h.h5.some(v => v != null);
+    $('histStatus').textContent = any ? '' : 'No samples yet — one per 30 min of use.';
+    $('histStatus').className = 'status';
+  }).catch(x => toast('histStatus', x.message));
+}
+$('btnHist').onclick = loadHistory;
+
+/* ── news ── */
+function loadNews() {
+  api('/api/news').then(nw => {
+    const ul = $('newsList');
+    if (!nw.items || !nw.items.length) {
+      ul.innerHTML = '<li class="muted">Nothing fetched yet — the device pulls the feed a few seconds after boot, then every 6 h.</li>';
+      return;
+    }
+    ul.innerHTML = nw.items.map(it => {
+      const li = document.createElement('li');
+      li.textContent = it.title;
+      return `<li>${li.innerHTML}<div class="nd">${it.date || ''}</div></li>`;
+    }).join('');
+  }).catch(() => {});
 }
 
 let pollTimer = null;
@@ -431,6 +585,19 @@ $('btnSettings').onclick = () => {
 $('btnFlip').onclick = () =>
   api('/api/settings', { flip: 'toggle' }).then(() => toast('setStatus', 'Flipped.', true))
     .catch(x => toast('setStatus', x.message));
+
+$('btnScreens').onclick = () => {
+  const scr = maskGet('scrChecks'), mdl = maskGet('mdlChecks');
+  if (!scr) return toast('scrStatus', 'Keep at least one screen in the carousel.');
+  if (!mdl) return toast('scrStatus', 'Keep at least one mascot.');
+  api('/api/settings', {
+    ui_mode: +$('selMode').value,
+    dwell_s: +$('selDwell').value,
+    scr_mask: scr,
+    mdl_mask: mdl,
+  }).then(() => { dirty = false; toast('scrStatus', 'Saved.', true); })
+    .catch(x => toast('scrStatus', x.message));
+};
 
 $('btnToken').onclick = () => {
   const token = $('inToken').value.trim(), pin = $('inTokenPin').value;

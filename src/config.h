@@ -56,6 +56,15 @@
 // status.anthropic.com redirects here — query the canonical host directly
 #define STATUS_ENDPOINT         "https://status.claude.com/api/v2/incidents/unresolved.json"
 
+// ── Anthropic news feed (T-Display S3 news screen) ───────
+// Streamed and abandoned after the first NEWS_MAX_ITEMS items — the full feed
+// is ~200KB but each item is tiny.
+#define NEWS_FEED_URL           "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml"
+#define NEWS_POLL_SEC           21600    // refetch every 6h
+#define NEWS_RETRY_SEC          1800     // failed fetch retries in 30min
+#define NEWS_MAX_ITEMS          5
+#define NEWS_TIMEOUT_MS         10000
+
 // ── NVS ──────────────────────────────────────────────────
 #define NVS_NAMESPACE           "claude"
 

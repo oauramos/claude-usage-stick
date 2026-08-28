@@ -318,12 +318,13 @@ void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi
   #define SY(n) (n)
 #endif
 
-#ifdef BOARD_CROWPANEL_ADV_35
-// The CrowPanel's ILI9488 is too slow to clear-then-redraw on screen without flicker.
-// The dashboard is therefore rendered into an off-screen sprite (PSRAM) and pushed in a
-// single transfer — no flicker. Other screens draw straight to the panel so touch input
-// (PIN entry) stays snappy. TFT_eSprite hides (not overrides virtually) the TFT_eSPI
-// drawing methods, so dashboard drawing must use a TFT_eSprite-typed target (see drawBar
+#if defined(BOARD_CROWPANEL_ADV_35) || defined(BOARD_TDISPLAY_S3)
+// The CrowPanel's ILI9488 is too slow to clear-then-redraw on screen without flicker,
+// and the T-Display S3's v3 screen carousel would flash on every transition.
+// The dashboard (and the S3's other screens) render into an off-screen sprite (PSRAM)
+// pushed in a single transfer — no flicker. Boot/PIN/setup screens draw straight to
+// the panel so input stays snappy. TFT_eSprite hides (not overrides virtually) the
+// TFT_eSPI drawing methods, so drawing must use a TFT_eSprite-typed target (see drawBar
 // being a template that binds to the concrete type at compile time).
 static TFT_eSprite s_dash = TFT_eSprite(&lcd);
 static bool        s_dashReady = false;
@@ -450,7 +451,9 @@ static inline int mascotEdge(int c, int W) { return (c * W + 9) / 18; }
 
 // W = total width; rh = row height, ~2x the cell width (W/18) — terminal quadrant
 // cells are about twice as tall as wide, and square cells squash him.
-static void drawMascot(TFT_eSPI& g, int x, int y, int W, int rh, uint16_t color, bool dead) {
+// Templated like drawBar so it binds to the panel or the sprite at compile time.
+template <class GFX>
+static void drawMascot(GFX& g, int x, int y, int W, int rh, uint16_t color, bool dead) {
     for (int r = 0; r < 5; r++) {
         uint32_t row = (dead && r == 1) ? CLAWD_DEAD_ROW1 : CLAWD_ROWS[r];
         for (int c = 0; c < 18; c++)
@@ -496,9 +499,26 @@ static void drawMascot(TFT_eSPI& g, int x, int y, int W, int rh, uint16_t color,
 #define MASCOT_CX(i) (MASCOT_CX0 + (i) * MASCOT_SPACING)
 #define MASCOT_X(i)  (MASCOT_CX(i) - MASCOT_W / 2)
 
+// Which mascots render (panel setting) — the N enabled ones re-center evenly.
+static uint8_t s_mdlMask = 0x0F;
+void uiSetModelMask(uint8_t mask) { s_mdlMask = mask & 0x0F ? mask & 0x0F : 0x0F; }
+
+// Fills idx[] with the enabled model indices and cx[] with their centers;
+// returns N. Shared by the status panel and the blink tick so eyes always
+// land where the mascots actually are.
+static int mascotLayout(int idx[4], int cx[4]) {
+    int n = 0;
+    for (int i = 0; i < 4; i++)
+        if (s_mdlMask & (1 << i)) idx[n++] = i;
+    for (int k = 0; k < n; k++)
+        cx[k] = (n == 4) ? MASCOT_CX(k) : SCREEN_W * (2 * k + 1) / (2 * n);
+    return n;
+}
+
 // Size-2 countdown values — padded, opaque print overwrites in place so the
 // 10s clock tick can repaint them without clearing first.
-static void drawResetValues(TFT_eSPI& g, const char* h5rst, const char* d7rst) {
+template <class GFX>
+static void drawResetValues(GFX& g, const char* h5rst, const char* d7rst) {
     g.setTextColor(C_TEXT, C_BG);
     g.setTextSize(2);
     g.setCursor(10, RESET_VAL_Y);
@@ -507,7 +527,8 @@ static void drawResetValues(TFT_eSPI& g, const char* h5rst, const char* d7rst) {
     g.printf("%-8s", d7rst);
 }
 
-static void drawResetRow(TFT_eSPI& g, const char* h5rst, const char* d7rst) {
+template <class GFX>
+static void drawResetRow(GFX& g, const char* h5rst, const char* d7rst) {
     g.setTextColor(C_DIM, C_BG);
     g.setTextSize(1);
     g.setCursor(10, RESET_CAP_Y);
@@ -517,44 +538,53 @@ static void drawResetRow(TFT_eSPI& g, const char* h5rst, const char* d7rst) {
     drawResetValues(g, h5rst, d7rst);
 }
 
-static void drawStatusPanel(TFT_eSPI& g) {
+template <class GFX>
+static void drawStatusPanel(GFX& g) {
     static const char* names[4] = {"HAIKU", "SONNET", "OPUS", "FABLE"};
     bool up[4] = {s_modelStatus.haikuUp, s_modelStatus.sonnetUp,
                   s_modelStatus.opusUp,  s_modelStatus.fableUp};
-    for (int i = 0; i < 4; i++) {
-        int cx = MASCOT_CX(i);
+    int idx[4], cx[4];
+    int n = mascotLayout(idx, cx);
+    for (int k = 0; k < n; k++) {
+        int i = idx[k];
         // Unknown (status never fetched) renders gray without X eyes, so a
         // status-page outage is never mistaken for a model outage.
         bool dead = s_modelStatus.ok && !up[i];
         uint16_t col = (!s_modelStatus.ok || dead) ? C_DIM : C_HEAD;
-        drawMascot(g, MASCOT_X(i), MASCOT_Y, MASCOT_W, MASCOT_RH, col, dead);
+        drawMascot(g, cx[k] - MASCOT_W / 2, MASCOT_Y, MASCOT_W, MASCOT_RH, col, dead);
         g.setTextColor(C_DIM, C_BG);
         g.setTextSize(1);
-        g.setCursor(cx - (int)strlen(names[i]) * 3, MASCOT_NAME_Y);
+        g.setCursor(cx[k] - (int)strlen(names[i]) * 3, MASCOT_NAME_Y);
         g.print(names[i]);
     }
 }
 
-// Repaint only the eye cells of the healthy mascots — drawn straight to the panel,
-// so the 2s "I'm alive" blink costs no full redraw.
+// Repaint only the eye cells of the healthy mascots. On this board the eyes go
+// into the retained sprite and one push refreshes the panel — the 2s
+// "I'm alive" blink still costs no full redraw.
 void uiBlinkTick(bool closed) {
     bool up[4] = {s_modelStatus.haikuUp, s_modelStatus.sonnetUp,
                   s_modelStatus.opusUp,  s_modelStatus.fableUp};
+    auto& g = dashTarget();
     int ey = MASCOT_Y + MASCOT_RH;   // eye row 1
-    for (int i = 0; i < 4; i++) {
+    int idx[4], cx[4];
+    int n = mascotLayout(idx, cx);
+    for (int k = 0; k < n; k++) {
+        int i = idx[k];
         if (!s_modelStatus.ok || !up[i]) continue;   // dead/unknown don't blink
         for (int e = 0; e < 2; e++) {
-            int ex = MASCOT_X(i) + mascotEdge(CLAWD_EYE_COLS[e], MASCOT_W);
+            int ex = cx[k] - MASCOT_W / 2 + mascotEdge(CLAWD_EYE_COLS[e], MASCOT_W);
             int ew = mascotEdge(CLAWD_EYE_COLS[e] + 1, MASCOT_W) -
                      mascotEdge(CLAWD_EYE_COLS[e], MASCOT_W);
             if (closed) {
-                lcd.fillRect(ex, ey, ew, MASCOT_RH, C_HEAD);                  // lid down
-                lcd.fillRect(ex, ey + MASCOT_RH / 2 - 1, ew, 2, C_BG);        // shut line
+                g.fillRect(ex, ey, ew, MASCOT_RH, C_HEAD);                  // lid down
+                g.fillRect(ex, ey + MASCOT_RH / 2 - 1, ew, 2, C_BG);        // shut line
             } else {
-                lcd.fillRect(ex, ey, ew, MASCOT_RH, C_BG);                    // eye open
+                g.fillRect(ex, ey, ew, MASCOT_RH, C_BG);                    // eye open
             }
         }
     }
+    UI_PUSH_DASH();
 }
 
 #else
@@ -636,7 +666,8 @@ void uiBlinkTick(bool closed) {
 }
 #endif // BOARD_TDISPLAY_S3 four-mascot row vs M5StickC Plus status panel
 
-static void drawWifiIcon(TFT_eSPI& g, int x, int rssi) {
+template <class GFX>
+static void drawWifiIcon(GFX& g, int x, int rssi) {
     int level = (rssi >= -55) ? 4 : (rssi >= -65) ? 3 : (rssi >= -75) ? 2 : (rssi >= -85) ? 1 : 0;
     for (int i = 0; i < 4; i++) {
         int h = 3 * (i + 1);
@@ -647,7 +678,8 @@ static void drawWifiIcon(TFT_eSPI& g, int x, int rssi) {
 // Right side of the header, anchored to the right edge: [ago] [wifi] [battery+pct].
 // Repainted whole by uiDashboardClock every 10s, so everything here must be
 // derivable from its arguments.
-static void drawHeaderRight(TFT_eSPI& g, int rssi, unsigned long ago, int batPct) {
+template <class GFX>
+static void drawHeaderRight(GFX& g, int rssi, unsigned long ago, int batPct) {
     g.setTextColor(C_TEXT, C_HEAD);
     g.setTextSize(1);
 
@@ -672,6 +704,217 @@ static void drawHeaderRight(TFT_eSPI& g, int rssi, unsigned long ago, int batPct
     g.print(as);
 }
 #endif // MANGO_UI
+
+#ifdef BOARD_TDISPLAY_S3
+// ── v3 carousel screens (chart / news / clock) ──────────────────────────────
+// All render into the retained sprite and push whole — flicker-free by
+// construction, so no partial-update choreography is needed.
+
+void uiHeaderAlternate() { s_hdrShowUrl = !s_hdrShowUrl; }
+
+template <class GFX>
+static void drawScreenHeader(GFX& g, unsigned long lastFetchMs, int rssi) {
+    g.fillRect(0, 0, SCREEN_W, 18, C_HEAD);
+    drawHeaderLeft(g);
+    drawHeaderRight(g, rssi, (millis() - lastFetchMs) / 1000, halBatPercent());
+}
+
+void uiChartScreen(const HistSlot* slots, uint32_t newestEpoch,
+                   unsigned long lastFetchMs, int rssi) {
+    auto& g = dashTarget();
+    g.fillSprite(C_BG);
+    drawScreenHeader(g, lastFetchMs, rssi);
+
+    g.setTextSize(1);
+    g.setTextColor(C_DIM, C_BG);
+    g.setCursor(10, 22);
+    g.print("7-DAY USAGE");
+    g.setTextColor(C_HEAD, C_BG);
+    g.setCursor(SCREEN_W - 10 - 6 * 6, 22);
+    g.print("5H");
+    g.setTextColor(C_HEAD_DK, C_BG);
+    g.setCursor(SCREEN_W - 10 - 2 * 6, 22);
+    g.print("7D");
+
+    const int px0 = 10, px1 = 309, py0 = 34, py1 = 136;
+
+    bool any = false;
+    for (int i = 0; i < HIST_SLOTS && !any; i++) any = slots[i].h5 != HIST_EMPTY;
+    if (!any) {
+        g.setTextColor(C_DIM, C_BG);
+        g.setCursor((SCREEN_W - 18 * 6) / 2, 80);
+        g.print("collecting data...");
+        g.setCursor((SCREEN_W - 30 * 6) / 2, 96);
+        g.print("one sample every 30min of use");
+        UI_PUSH_DASH();
+        return;
+    }
+
+    // Y gridlines with labels
+    for (int p = 0; p <= 100; p += 50) {
+        int y = py1 - (py1 - py0) * p / 100;
+        g.drawFastHLine(px0, y, px1 - px0, C_BAR_BG);
+        char lab[5];
+        snprintf(lab, sizeof(lab), "%d", p);
+        g.setTextColor(C_DIM, C_BG);
+        g.setCursor(px0 + 2, y - ((p == 0) ? 9 : -2));
+        g.print(lab);
+    }
+
+    // Local-midnight ticks with weekday letters
+    static const char WD[8] = "SMTWTFS";
+    struct tm tmA, tmB;
+    for (int i = 1; i < HIST_SLOTS; i++) {
+        time_t ta = (time_t)newestEpoch - (time_t)(HIST_SLOTS - (i - 1)) * HIST_SLOT_SEC;
+        time_t tb = (time_t)newestEpoch - (time_t)(HIST_SLOTS - i) * HIST_SLOT_SEC;
+        localtime_r(&ta, &tmA);
+        localtime_r(&tb, &tmB);
+        if (tmA.tm_mday != tmB.tm_mday) {
+            int x = px0 + (px1 - px0) * i / (HIST_SLOTS - 1);
+            g.drawFastVLine(x, py0, py1 - py0, C_BAR_BG);
+            g.setTextColor(C_DIM, C_BG);
+            g.setCursor(x - 2, py1 + 4);
+            g.print(WD[tmB.tm_wday]);
+        }
+    }
+
+    // Series: 7d underneath, 5h on top; gaps break the line
+    auto plotLine = [&](bool h5, uint16_t color) {
+        int prevX = 0, prevY = 0;
+        bool has = false;
+        for (int i = 0; i < HIST_SLOTS; i++) {
+            uint8_t v = h5 ? slots[i].h5 : slots[i].d7;
+            if (v == HIST_EMPTY) { has = false; continue; }
+            int x = px0 + (px1 - px0) * i / (HIST_SLOTS - 1);
+            int y = py1 - (py1 - py0) * v / 100;
+            if (has) g.drawLine(prevX, prevY, x, y, color);
+            else g.drawPixel(x, y, color);
+            prevX = x; prevY = y; has = true;
+        }
+    };
+    plotLine(false, C_HEAD_DK);
+    plotLine(true, C_HEAD);
+
+    UI_PUSH_DASH();
+}
+
+void uiNewsScreen(const NewsState& news, unsigned long lastFetchMs, int rssi) {
+    auto& g = dashTarget();
+    g.fillSprite(C_BG);
+    drawScreenHeader(g, lastFetchMs, rssi);
+
+    g.setTextSize(1);
+    g.setTextColor(C_DIM, C_BG);
+    g.setCursor(10, 22);
+    g.print("ANTHROPIC NEWS");
+
+    // Staleness note, right-aligned on the title row
+    char note[20] = "";
+    if (news.fetchedAtEpoch == 0) {
+        strlcpy(note, news.ok ? "" : "fetching...", sizeof(note));
+    } else {
+        uint32_t age = (uint32_t)time(nullptr) - news.fetchedAtEpoch;
+        if (!news.ok) strlcpy(note, "offline", sizeof(note));
+        else if (age > 12 * 3600) strlcpy(note, "stale", sizeof(note));
+    }
+    if (note[0]) {
+        g.setTextColor(C_WARN, C_BG);
+        g.setCursor(SCREEN_W - 10 - (int)strlen(note) * 6, 22);
+        g.print(note);
+    }
+
+    if (news.count == 0) {
+        g.setTextColor(C_DIM, C_BG);
+        g.setCursor((SCREEN_W - 22 * 6) / 2, 80);
+        g.print("no headlines fetched yet");
+        UI_PUSH_DASH();
+        return;
+    }
+
+    // Three items: two wrapped title lines + a date line each
+    const int perLine = 50;   // (320-20)/6
+    int y = 36;
+    for (int i = 0; i < 3 && i < news.count; i++) {
+        const NewsItem& it = news.items[i];
+        const char* t = it.title;
+        int len = strlen(t);
+        int split = len;
+        if (len > perLine) {
+            split = perLine;
+            while (split > 30 && t[split] != ' ') split--;   // wrap on a space
+            if (t[split] != ' ') split = perLine;
+        }
+        g.setTextColor(C_TEXT, C_BG);
+        g.setCursor(10, y);
+        for (int c = 0; c < split; c++) g.print(t[c]);
+        if (len > split) {
+            const char* rest = t + split + (t[split] == ' ' ? 1 : 0);
+            g.setCursor(10, y + 10);
+            for (int c = 0; c < perLine && rest[c]; c++) g.print(rest[c]);
+        }
+        g.setTextColor(C_HEAD_DK, C_BG);
+        g.setCursor(10, y + 22);
+        g.print(it.date[0] ? it.date : "-");
+        if (i < 2) g.drawFastHLine(10, y + 32, SCREEN_W - 20, C_BAR_BG);
+        y += 38;
+    }
+    UI_PUSH_DASH();
+}
+
+void uiClockScreen(const UsageData& data, unsigned long lastFetchMs, int rssi) {
+    auto& g = dashTarget();
+    g.fillSprite(C_BG);
+    drawScreenHeader(g, lastFetchMs, rssi);
+
+    time_t now = time(nullptr);
+    char hhmm[6] = "--:--";
+    char dateLine[16] = "";
+    if (now > 1700000000) {
+        struct tm t;
+        localtime_r(&now, &t);
+        static const char* WD[7] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+        static const char* MO[12] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                                     "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
+        snprintf(hhmm, sizeof(hhmm), "%02d:%02d", t.tm_hour, t.tm_min);
+        snprintf(dateLine, sizeof(dateLine), "%s %s %d", WD[t.tm_wday], MO[t.tm_mon], t.tm_mday);
+    } else {
+        strlcpy(dateLine, "no time sync", sizeof(dateLine));
+    }
+
+    g.setTextColor(C_TEXT, C_BG);
+    g.setTextSize(5);   // 5 glyphs x 30px = 150px wide, 40px tall
+    g.setCursor((SCREEN_W - 5 * 30) / 2 + 2, 44);
+    g.print(hhmm);
+
+    g.setTextSize(2);
+    g.setTextColor(C_DIM, C_BG);
+    g.setCursor((SCREEN_W - (int)strlen(dateLine) * 12) / 2, 96);
+    g.print(dateLine);
+
+    // Micro usage bars along the bottom
+    auto microBar = [&](int x, const char* label, float pct) {
+        g.setTextSize(1);
+        g.setTextColor(C_DIM, C_BG);
+        g.setCursor(x, 140);
+        g.print(label);
+        int bx = x + 18, bw = 84;
+        g.fillRect(bx, 140, bw, 8, C_BAR_BG);
+        char ps[8] = "--%";
+        if (data.ok) {
+            int fw = constrain((int)(bw * pct / 100.0f), 0, bw);
+            if (fw > 0) g.fillRect(bx, 140, fw, 8, C_HEAD);
+            snprintf(ps, sizeof(ps), "%.0f%%", pct);
+        }
+        g.setTextColor(C_TEXT, C_BG);
+        g.setCursor(bx + bw + 6, 140);
+        g.print(ps);
+    };
+    microBar(14, "5H", data.h5);
+    microBar(170, "7D", data.d7);
+
+    UI_PUSH_DASH();
+}
+#endif // BOARD_TDISPLAY_S3
 
 void uiInit() {
     lcd.setRotation(SCREEN_ROT);
@@ -907,7 +1150,7 @@ void uiConnecting(const char* ssid, int attempt) {
 }
 
 void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int batPct) {
-#ifdef BOARD_CROWPANEL_ADV_35
+#if defined(BOARD_CROWPANEL_ADV_35) || defined(BOARD_TDISPLAY_S3)
     auto& g = dashTarget();
     g.fillSprite(C_BG);
 #else
@@ -1006,7 +1249,7 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
 
 void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi) {
     if (!data.ok) return;   // error layout is owned by the full uiDashboard
-#ifdef BOARD_CROWPANEL_ADV_35
+#if defined(BOARD_CROWPANEL_ADV_35) || defined(BOARD_TDISPLAY_S3)
     auto& g = dashTarget();   // update the retained sprite, then push it once
 #else
     auto& g = lcd;
@@ -1015,8 +1258,8 @@ void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi
     // Header "rssi / ago": repaint the header band over its own colour.
     unsigned long ago = (millis() - lastFetchMs) / 1000;
 #ifdef BOARD_TDISPLAY_S3
-    // Ride the 10s tick to alternate the left text (device label ↔ panel URL).
-    s_hdrShowUrl = !s_hdrShowUrl;
+    // Repaint the left text with the current phase — screensTick() owns the
+    // label ↔ URL alternation via uiHeaderAlternate().
     drawHeaderLeft(g);
 #endif
     g.fillRect(SCREEN_W / 2, 0, SCREEN_W / 2, SY(18), C_HEAD);
