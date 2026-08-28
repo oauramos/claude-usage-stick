@@ -3,3 +3,5 @@
 upload_data.py
 .DS_Store
 web/firmware/
+.playwright-mcp/
+panel-login.png

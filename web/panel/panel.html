@@ -1,0 +1,488 @@
+<!-- Source of the device's control panel. Edit this file, then run
+     `python3 web/panel/build.py` to regenerate src/panel_html.h (gzipped
+     PROGMEM). Self-contained by design: no external fonts, scripts or images —
+     the device serves this on a LAN that may have no internet at all. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Claude Usage Stick</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 5'%3E%3Cg fill='%23e8733a'%3E%3Crect x='3' y='0' width='12' height='1'/%3E%3Crect x='3' y='1' width='2' height='1'/%3E%3Crect x='6' y='1' width='6' height='1'/%3E%3Crect x='13' y='1' width='2' height='1'/%3E%3Crect x='1' y='2' width='16' height='1'/%3E%3Crect x='3' y='3' width='12' height='1'/%3E%3Crect x='4' y='4' width='1' height='1'/%3E%3Crect x='6' y='4' width='1' height='1'/%3E%3Crect x='11' y='4' width='1' height='1'/%3E%3Crect x='13' y='4' width='1' height='1'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root {
+    --ground: #16130f;
+    --surface: #1f1a14;
+    --surface-2: #262019;
+    --line: #383024;
+    --line-soft: #2b2419;
+    --text: #ece3d6;
+    --text-dim: #a89a86;
+    --text-faint: #7d715f;
+    --coral: #d97757;
+    --coral-bright: #e98963;
+    --mango: #f0a83c;
+    --ok: #8fb573;
+    --bad: #d96257;
+    --screen: #0c0a08;
+    --head: #e8733a;
+    --font-display: "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+    --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--text);
+    font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+    min-height: 100vh;
+  }
+  header {
+    background: var(--head); color: #16130f; padding: 10px 16px;
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  }
+  header h1 {
+    margin: 0; font-family: var(--font-display); font-size: 20px;
+    letter-spacing: 1.5px; font-weight: 700; color: #fff;
+  }
+  header .host { font-family: var(--font-mono); font-size: 13px; color: #3b2415; }
+  header .fw { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: #3b2415; }
+  main {
+    max-width: 760px; margin: 0 auto; padding: 16px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  @media (max-width: 640px) { main { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .card.wide { grid-column: 1 / -1; }
+  .card h2 {
+    margin: 0 0 10px; font-family: var(--font-display); font-size: 13px;
+    letter-spacing: 2px; color: var(--text-dim); font-weight: 600;
+    text-transform: uppercase;
+  }
+  .muted { color: var(--text-dim); font-size: 13px; }
+  .faint { color: var(--text-faint); font-size: 12px; }
+  .mono { font-family: var(--font-mono); }
+  .err { color: var(--bad); }
+  .okc { color: var(--ok); }
+
+  /* ── usage bars (mirrors the device dashboard) ── */
+  .screenish {
+    background: var(--screen); border: 1px solid var(--line-soft);
+    border-radius: 8px; padding: 12px 14px;
+  }
+  .bar-row { margin-bottom: 10px; }
+  .bar-cap {
+    display: flex; justify-content: space-between; font-family: var(--font-mono);
+    font-size: 12px; letter-spacing: 1px; margin-bottom: 4px;
+  }
+  .bar { height: 10px; background: #221c15; border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--text); width: 0; transition: width .4s; }
+  .resets {
+    display: flex; gap: 24px; font-family: var(--font-mono); font-size: 12px;
+    color: var(--text-dim); margin: 4px 0 10px;
+  }
+  .resets b { color: var(--text); font-size: 15px; font-weight: 500; display: block; }
+  .models { display: flex; gap: 18px; align-items: flex-end; }
+  .model { text-align: center; }
+  .model svg { display: block; margin: 0 auto 3px; }
+  .model .cell { fill: var(--head); }
+  .model.down .cell { fill: #56504a; }
+  .model span { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; color: var(--text-dim); }
+  .model.down span { color: var(--text-faint); }
+
+  /* ── forms ── */
+  label { display: block; font-size: 12px; color: var(--text-dim); margin: 10px 0 4px; }
+  input, select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px;
+    background: var(--ground); color: var(--text); font-size: 14px; outline: 0;
+    font-family: var(--font-body);
+  }
+  input:focus, select:focus { border-color: var(--coral); }
+  input.pin { font-family: var(--font-mono); letter-spacing: 8px; text-align: center; width: 130px; }
+  button {
+    margin-top: 10px; padding: 8px 14px; border: 0; border-radius: 7px;
+    background: var(--coral); color: #16130f; font-weight: 600; font-size: 14px;
+    cursor: pointer; font-family: var(--font-body);
+  }
+  button:hover { background: var(--coral-bright); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+  button.danger { background: var(--bad); }
+  .row2 { display: flex; gap: 10px; }
+  .row2 > * { flex: 1; }
+  .status { font-size: 12px; margin-top: 8px; min-height: 1em; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-size: 13px; }
+  .kv dt { color: var(--text-faint); }
+  .kv dd { margin: 0; font-family: var(--font-mono); font-size: 12.5px; }
+  .netlist { list-style: none; margin: 8px 0 0; padding: 0; max-height: 180px; overflow-y: auto; }
+  .netlist li {
+    padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 6px;
+    margin-bottom: 4px; cursor: pointer; display: flex; justify-content: space-between;
+    font-size: 13px;
+  }
+  .netlist li:hover, .netlist li.sel { border-color: var(--coral); background: var(--surface-2); }
+
+  /* ── login overlay ── */
+  #login {
+    position: fixed; inset: 0; background: rgba(12,10,8,.93); z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #login .box {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 26px 30px; text-align: center; width: 290px;
+  }
+  #login h1 { font-family: var(--font-display); letter-spacing: 2px; font-size: 18px; margin: 0 0 4px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="login" class="hidden">
+  <div class="box">
+    <h1>CLAUDE USAGE STICK</h1>
+    <p class="muted" style="margin:4px 0 14px">Enter the device PIN</p>
+    <form id="loginForm">
+      <input id="loginPin" class="pin" type="password" inputmode="numeric"
+             pattern="\d{4}" minlength="4" maxlength="4" autocomplete="off" placeholder="····">
+      <br>
+      <button id="loginBtn" type="submit">Unlock</button>
+    </form>
+    <div id="loginStatus" class="status"></div>
+    <p class="faint" style="margin:12px 0 0">Same 4-digit PIN as the device buttons.<br>
+       Logging in here also unlocks the screen.</p>
+  </div>
+</div>
+
+<header>
+  <h1>CLAUDE USAGE STICK</h1>
+  <span class="host mono" id="hHost"></span>
+  <span class="fw" id="hFw"></span>
+</header>
+
+<main id="app">
+  <section class="card wide">
+    <h2>Usage</h2>
+    <div class="screenish">
+      <div class="bar-row">
+        <div class="bar-cap"><span>5-HOUR</span><span id="h5pct">--%</span></div>
+        <div class="bar"><i id="h5bar"></i></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-cap"><span>7-DAY</span><span id="d7pct">--%</span></div>
+        <div class="bar"><i id="d7bar"></i></div>
+      </div>
+      <div class="resets">
+        <div>5H RESET<b id="h5rst">--</b></div>
+        <div>7D RESET<b id="d7rst">--</b></div>
+        <div style="margin-left:auto;text-align:right">FETCHED<b id="ageS">--</b></div>
+      </div>
+      <div class="models" id="models"></div>
+    </div>
+    <div class="status" id="usageStatus"></div>
+    <button class="ghost" id="btnRefresh">Refresh now</button>
+  </section>
+
+  <section class="card">
+    <h2>Device</h2>
+    <dl class="kv">
+      <dt>Firmware</dt><dd id="dFw"></dd>
+      <dt>Hostname</dt><dd id="dHost"></dd>
+      <dt>IP</dt><dd id="dIp"></dd>
+      <dt>WiFi RSSI</dt><dd id="dRssi"></dd>
+      <dt>Uptime</dt><dd id="dUp"></dd>
+      <dt>Free heap</dt><dd id="dHeap"></dd>
+      <dt>Screen</dt><dd id="dLocked"></dd>
+    </dl>
+    <button class="ghost" id="btnLogout">Log out</button>
+  </section>
+
+  <section class="card">
+    <h2>Display &amp; refresh</h2>
+    <label for="selBright">Brightness</label>
+    <select id="selBright">
+      <option value="0">Off</option><option value="1">Dim</option>
+      <option value="2">Normal</option><option value="3">Bright</option>
+    </select>
+    <label for="selPoll">Refresh interval</label>
+    <select id="selPoll">
+      <option value="30">30 s</option><option value="60">1 min</option>
+      <option value="120">2 min</option><option value="300">5 min</option>
+    </select>
+    <label for="selTz">Timezone</label>
+    <select id="selTz"></select>
+    <label for="inName">Device name (header label &amp; hostname)</label>
+    <input id="inName" maxlength="32" autocomplete="off">
+    <div class="row2">
+      <button id="btnSettings">Apply</button>
+      <button class="ghost" id="btnFlip">Flip screen 180&deg;</button>
+    </div>
+    <div class="status" id="setStatus"></div>
+  </section>
+
+  <section class="card">
+    <h2>Claude token</h2>
+    <p class="faint" style="margin:0 0 6px">The stored token is write-only: it can be
+       replaced here but never read back, by design.</p>
+    <label for="inToken">New OAuth token</label>
+    <input id="inToken" type="password" maxlength="256" autocomplete="off"
+           placeholder="sk-ant-oat01-... (claude setup-token)">
+    <label for="inTokenPin">Confirm with PIN</label>
+    <input id="inTokenPin" class="pin" type="password" inputmode="numeric"
+           pattern="\d{4}" maxlength="4" autocomplete="off" placeholder="····">
+    <br>
+    <button id="btnToken">Replace token</button>
+    <div class="status" id="tokStatus"></div>
+  </section>
+
+  <section class="card">
+    <h2>WiFi</h2>
+    <p class="muted" style="margin:0">Changing WiFi reboots the device.</p>
+    <button class="ghost" id="btnScan">Scan networks</button>
+    <ul class="netlist hidden" id="netList"></ul>
+    <label for="inSsid">SSID</label>
+    <input id="inSsid" maxlength="32" autocomplete="off">
+    <label for="inWifiPass">Password</label>
+    <input id="inWifiPass" type="password" maxlength="64" autocomplete="off"
+           placeholder="Leave empty for open network">
+    <br>
+    <button id="btnWifi">Save &amp; reboot</button>
+    <div class="status" id="wifiStatus"></div>
+  </section>
+
+  <section class="card wide">
+    <h2>Danger zone</h2>
+    <p class="muted" style="margin:0">Factory reset wipes WiFi, token, PIN and all settings.
+       Type <b class="mono">ERASE</b> to arm the button.</p>
+    <div class="row2" style="align-items:end">
+      <div><label for="inErase">Confirmation</label>
+      <input id="inErase" class="mono" autocomplete="off" placeholder="ERASE"></div>
+      <button class="danger" id="btnErase" disabled>Erase everything</button>
+    </div>
+    <div class="status" id="eraseStatus"></div>
+  </section>
+</main>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ── serialized fetch: the device's WebServer handles one client at a time,
+      so every request goes through one queue ── */
+let chain = Promise.resolve();
+function api(path, body) {
+  const run = () => fetch(path, body === undefined ? {} : {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(async r => {
+    if (r.status === 401) { showLogin(); throw new Error('auth'); }
+    let j = null;
+    try { j = await r.json(); } catch (e) {}
+    if (!r.ok) throw Object.assign(new Error((j && j.error) || ('http ' + r.status)), { json: j, code: r.status });
+    return j;
+  });
+  const p = chain.then(run, run);
+  chain = p.catch(() => {});
+  return p;
+}
+
+/* ── login ── */
+function showLogin() { $('login').classList.remove('hidden'); $('loginPin').focus(); }
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const st = $('loginStatus'); st.className = 'status';
+  $('loginBtn').disabled = true;
+  try {
+    const r = await api('/api/login', { pin: $('loginPin').value });
+    $('login').classList.add('hidden');
+    $('loginPin').value = '';
+    st.textContent = '';
+    if (r.unlocked_device) toast('usageStatus', 'Device screen unlocked.', true);
+    poll();
+  } catch (x) {
+    st.className = 'status err';
+    st.textContent = x.code === 429
+      ? 'Too many attempts — wait ' + ((x.json && x.json.retry_s) || 60) + 's.'
+      : 'Wrong PIN.';
+  }
+  $('loginBtn').disabled = false;
+});
+$('btnLogout').onclick = () => api('/api/logout', {}).then(() => location.reload()).catch(() => {});
+
+/* ── clawd mascot (same 18×5 bitfield as the firmware) ── */
+const CLAWD = [0b000111111111111000, 0b000110111111011000, 0b011111111111111110,
+               0b000111111111111000, 0b000010100001010000];
+const CLAWD_DEAD1 = 0b000111111111111000;
+function clawdSvg(dead) {
+  let cells = '';
+  for (let r = 0; r < 5; r++) {
+    const row = (dead && r === 1) ? CLAWD_DEAD1 : CLAWD[r];
+    for (let c = 0; c < 18; c++)
+      if (row & (1 << (17 - c)))
+        cells += `<rect class="cell" x="${c * 3}" y="${r * 3}" width="2.6" height="2.6"/>`;
+  }
+  return `<svg width="54" height="15" viewBox="0 0 54 15">${cells}</svg>`;
+}
+const MODELS = ['haiku', 'sonnet', 'opus', 'fable'];
+function renderModels(m) {
+  $('models').innerHTML = MODELS.map(k => {
+    const up = !m || m[k] !== false;
+    return `<div class="model ${up ? '' : 'down'}">${clawdSvg(!up)}<span>${k.toUpperCase()}</span></div>`;
+  }).join('');
+}
+
+/* ── formatting ── */
+function fmtCountdown(epoch, now) {
+  if (!epoch) return '--';
+  let d = epoch - now;
+  if (d <= 0) return 'now';
+  const days = d / 86400 | 0, h = d % 86400 / 3600 | 0, m = d % 3600 / 60 | 0;
+  return days > 0 ? days + 'd' + h + 'h' : h > 0 ? h + 'h' + String(m).padStart(2, '0') + 'm' : m + 'm';
+}
+function fmtUptime(s) {
+  const d = s / 86400 | 0, h = s % 86400 / 3600 | 0, m = s % 3600 / 60 | 0;
+  return (d ? d + 'd ' : '') + h + 'h ' + m + 'm';
+}
+
+/* ── timezone options: -12:00 … +14:00 in 30-min steps ── */
+(function () {
+  const sel = $('selTz');
+  for (let m = -720; m <= 840; m += 30) {
+    const o = document.createElement('option');
+    const a = Math.abs(m);
+    o.value = m;
+    o.textContent = 'GMT' + (m < 0 ? '-' : '+') + (a / 60 | 0) + (a % 60 ? ':30' : '');
+    sel.appendChild(o);
+  }
+})();
+
+/* ── state polling & render ── */
+let dirty = false;   // a settings field the user is editing shouldn't be clobbered
+['selBright', 'selPoll', 'selTz', 'inName'].forEach(id =>
+  $(id).addEventListener('input', () => dirty = true));
+
+function render(s) {
+  $('hHost').textContent = s.hostname + '.local';
+  $('hFw').textContent = 'v' + s.fw + ' · ' + s.codename;
+  const u = s.usage || {};
+  $('h5pct').textContent = u.ok ? u.h5.toFixed(0) + '%' : '--%';
+  $('d7pct').textContent = u.ok ? u.d7.toFixed(0) + '%' : '--%';
+  $('h5bar').style.width = u.ok ? Math.min(u.h5, 100) + '%' : 0;
+  $('d7bar').style.width = u.ok ? Math.min(u.d7, 100) + '%' : 0;
+  $('h5rst').textContent = fmtCountdown(u.h5_reset, s.now);
+  $('d7rst').textContent = fmtCountdown(u.d7_reset, s.now);
+  $('ageS').textContent = u.age_s != null ? u.age_s + 's ago' : '--';
+  $('usageStatus').textContent = u.ok ? '' : 'fetch error: ' + (u.error || 'unknown');
+  $('usageStatus').className = u.ok ? 'status' : 'status err';
+  renderModels(s.models);
+
+  $('dFw').textContent = 'v' + s.fw + ' (' + s.codename + ')';
+  $('dHost').textContent = s.hostname + '.local';
+  $('dIp').textContent = s.ip;
+  $('dRssi').textContent = s.rssi + ' dBm';
+  $('dUp').textContent = fmtUptime(s.uptime_s);
+  $('dHeap').textContent = (s.heap_free / 1024 | 0) + ' KB (min ' + (s.heap_min / 1024 | 0) + ' KB)';
+  $('dLocked').textContent = s.locked ? 'locked (PIN screen)' : 'unlocked';
+
+  if (!dirty) {
+    const c = s.settings || {};
+    $('selBright').value = c.brightness;
+    $('selPoll').value = c.poll_sec;
+    $('selTz').value = c.tz_min;
+    $('inName').value = c.dev_name || '';
+  }
+}
+
+let pollTimer = null;
+function poll() {
+  clearTimeout(pollTimer);
+  api('/api/state').then(s => { render(s); pollTimer = setTimeout(poll, 5000); })
+    .catch(x => { if (x.message !== 'auth') pollTimer = setTimeout(poll, 5000); });
+}
+
+/* ── actions ── */
+function toast(id, msg, ok) {
+  const el = $(id);
+  el.textContent = msg;
+  el.className = 'status ' + (ok ? 'okc' : 'err');
+  setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 6000);
+}
+
+$('btnRefresh').onclick = () =>
+  api('/api/refresh', {}).then(() => toast('usageStatus', 'Refresh queued.', true))
+    .catch(x => toast('usageStatus', x.message));
+
+$('btnSettings').onclick = () => {
+  const body = {
+    brightness: +$('selBright').value,
+    poll_sec: +$('selPoll').value,
+    tz_min: +$('selTz').value,
+    dev_name: $('inName').value.trim(),
+  };
+  api('/api/settings', body).then(r => {
+    dirty = false;
+    toast('setStatus', r.hostname_pending_reboot
+      ? 'Saved. New hostname applies after the next reboot.' : 'Saved.', true);
+  }).catch(x => toast('setStatus', x.message));
+};
+
+$('btnFlip').onclick = () =>
+  api('/api/settings', { flip: 'toggle' }).then(() => toast('setStatus', 'Flipped.', true))
+    .catch(x => toast('setStatus', x.message));
+
+$('btnToken').onclick = () => {
+  const token = $('inToken').value.trim(), pin = $('inTokenPin').value;
+  if (!token || pin.length !== 4) return toast('tokStatus', 'Token and 4-digit PIN required.');
+  $('btnToken').disabled = true;
+  toast('tokStatus', 'Encrypting and probing…', true);
+  api('/api/token', { token, pin }).then(r => {
+    $('inToken').value = ''; $('inTokenPin').value = '';
+    toast('tokStatus', r.probe_ok
+      ? 'Token replaced and verified against the API.'
+      : 'Token saved, but the probe failed: ' + (r.error || 'unknown') + '.', r.probe_ok);
+  }).catch(x => toast('tokStatus', x.code === 403 ? 'Wrong PIN — token unchanged.' : x.message))
+    .finally(() => $('btnToken').disabled = false);
+};
+
+$('btnScan').onclick = function tryScan() {
+  $('btnScan').disabled = true;
+  api('/api/wifi/scan').then(r => {
+    if (r.scanning) { setTimeout(() => { tryScan(); }, 2500); return; }
+    $('btnScan').disabled = false;
+    const ul = $('netList');
+    ul.classList.remove('hidden');
+    ul.innerHTML = r.networks.map(n =>
+      `<li data-ssid="${n.ssid.replace(/"/g, '&quot;')}"><span>${n.ssid || '(hidden)'}${n.secure ? ' 🔒' : ''}</span><span class="faint">${n.rssi} dBm</span></li>`).join('');
+    ul.querySelectorAll('li').forEach(li => li.onclick = () => {
+      ul.querySelectorAll('li').forEach(x => x.classList.remove('sel'));
+      li.classList.add('sel');
+      $('inSsid').value = li.dataset.ssid;
+      $('inWifiPass').focus();
+    });
+  }).catch(x => { $('btnScan').disabled = false; toast('wifiStatus', x.message); });
+};
+
+$('btnWifi').onclick = () => {
+  const ssid = $('inSsid').value.trim();
+  if (!ssid) return toast('wifiStatus', 'SSID required.');
+  if (!confirm('Save WiFi "' + ssid + '" and reboot the device?')) return;
+  api('/api/wifi', { ssid, pass: $('inWifiPass').value })
+    .then(() => toast('wifiStatus', 'Saved — device is rebooting.', true))
+    .catch(x => toast('wifiStatus', x.message));
+};
+
+$('inErase').addEventListener('input', () => $('btnErase').disabled = $('inErase').value !== 'ERASE');
+$('btnErase').onclick = () => {
+  if (!confirm('Really erase everything? The device returns to first-time setup.')) return;
+  api('/api/reset', { confirm: 'ERASE' })
+    .then(() => toast('eraseStatus', 'Erasing — the device is rebooting into setup mode.', true))
+    .catch(x => toast('eraseStatus', x.message));
+};
+
+renderModels(null);
+poll();
+</script>
+</body>
+</html>

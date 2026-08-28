@@ -26,6 +26,7 @@
 #include "provision.h"
 #include "api.h"
 #include "ui.h"
+#include "panel.h"
 #ifdef MANGO_UI
 #include "status.h"
 #endif
@@ -40,7 +41,9 @@ bool          g_unlocked = false;
 unsigned long g_lastFetchMs = 0;
 
 // ── PIN Entry (blocks until 4 digits confirmed) ────────
-static void enterPin(char* pinOut, int maxLen) {
+// Returns false if a web login unlocked the device mid-entry (T-Display S3):
+// the token is already in g_token and the caller should skip its own decrypt.
+static bool enterPin(char* pinOut, int maxLen) {
     int digits[4] = {0, 0, 0, 0};
     int pos = 0;
 
@@ -48,12 +51,17 @@ static void enterPin(char* pinOut, int maxLen) {
         uiPinScreen(pos, digits);
         while (true) {
             halUpdate();
+#ifdef BOARD_TDISPLAY_S3
+            panelService();
+            if (panelUnlockPending()) return false;
+#endif
             if (halBtnAWasPressed()) { digits[pos] = (digits[pos] + 1) % 10; break; }
             if (halBtnBWasPressed()) { pos++; break; }
             delay(20);
         }
     }
     snprintf(pinOut, maxLen, "%d%d%d%d", digits[0], digits[1], digits[2], digits[3]);
+    return true;
 }
 
 // ── WiFi ───────────────────────────────────────────────
@@ -118,9 +126,10 @@ static void unlockPhase(int progressPct) {
     delay(300);
 
     int attempts = 0;
-    while (attempts < MAX_PIN_ATTEMPTS) {
+    bool webUnlocked = false;
+    while (attempts < MAX_PIN_ATTEMPTS && !webUnlocked) {
         char pin[9];
-        enterPin(pin, sizeof(pin));
+        if (!enterPin(pin, sizeof(pin))) { webUnlocked = true; break; }
 
         if (decryptToken(g_settings.blob, pin, g_token, sizeof(g_token))) break;
 
@@ -135,12 +144,27 @@ static void unlockPhase(int progressPct) {
         int lockSec = LOCKOUT_BASE_SEC * (1 << (attempts - 1));
         if (lockSec > 3600) lockSec = 3600;
         uiLockoutStatic(attempts, MAX_PIN_ATTEMPTS, lockSec);
-        for (int s = lockSec; s > 0; s--) {
+        // The device lockout governs the buttons only; the web login keeps its
+        // own throttle and stays reachable through the countdown.
+        for (int s = lockSec; s > 0 && !webUnlocked; s--) {
             uiLockoutTick(s);
-            delay(1000);
+            for (int slice = 0; slice < 50; slice++) {
+#ifdef BOARD_TDISPLAY_S3
+                panelService();
+                if (panelUnlockPending()) { webUnlocked = true; break; }
+#endif
+                delay(20);
+            }
         }
     }
+#ifdef BOARD_TDISPLAY_S3
+    panelConsumeUnlock();
+#endif
     g_unlocked = true;
+    // Drain stray button edges so nothing phantom-taps the dashboard.
+    halUpdate();
+    halBtnAWasPressed();
+    halBtnBWasPressed();
 }
 
 #ifdef BOARD_TDISPLAY_S3
@@ -173,6 +197,7 @@ static void netPhase() {
     snprintf(url, sizeof(url), "http://%s", WiFi.localIP().toString().c_str());
     uiSetNetInfo(url);
     uiSetHeaderLabel(g_settings.devName);
+    panelBegin(host);
 }
 #else
 static void netPhaseLegacy() {
@@ -255,6 +280,23 @@ void setup() {
 // ── Loop ───────────────────────────────────────────────
 void loop() {
     halUpdate();
+
+#ifdef BOARD_TDISPLAY_S3
+    panelService();
+    panelConsumeUnlock();   // post-boot logins don't need the boot-phase handoff
+    uint8_t acts = panelTakeAction();
+    if (acts & PANEL_ACT_FACTORY_RESET) {
+        settingsWipeAll();
+        ESP.restart();
+    }
+    if (acts & PANEL_ACT_REBOOT) ESP.restart();
+    if (acts & PANEL_ACT_FLIP) uiApplyRotation(g_settings.flip);
+    if (acts & PANEL_ACT_REFRESH) {
+        refresh();
+    } else if (acts & (PANEL_ACT_REDRAW | PANEL_ACT_FLIP)) {
+        uiDashboard(g_usage, g_lastFetchMs, WiFi.RSSI(), halBatPercent());
+    }
+#endif
 
 #ifdef MANGO_UI
     // A flips the screen 180°, B cycles brightness, A+B together = force refresh
