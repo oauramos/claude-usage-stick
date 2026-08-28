@@ -20,8 +20,9 @@ The fastest path to a working device: pick a board from the [supported list](Sup
 ## All pages
 
 **Using the device**
-- [Features](Features) — usage bars, reset countdowns, model mascots, PIN lock
-- [The UI](The-UI) — firmware versions (Clarity, Mango) and how the layout adapts per screen size
+- [Features](Features) — usage bars, reset countdowns, model mascots, PIN lock, screen modes
+- [The UI](The-UI) — firmware versions (Clarity, Mango, Dust) and how the layout adapts per screen size
+- [Web panel](Web-Panel) — the in-browser control panel: settings, token rotation, WiFi (Dust boards)
 - [Setup and daily use](Setup-and-Daily-Use) — captive-portal setup, PIN entry, button controls
 - [Troubleshooting](Troubleshooting) — flashing, WiFi, token, and display problems
 

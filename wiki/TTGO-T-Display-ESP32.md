@@ -22,7 +22,6 @@ From source, with the [PlatformIO CLI](https://platformio.org/install/cli):
 
 ```bash
 pio run -e tdisplay-esp32 -t upload     # firmware
-pio run -e tdisplay-esp32 -t uploadfs   # web setup UI (SPIFFS)
 ```
 
 ## Controls

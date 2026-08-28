@@ -23,7 +23,6 @@ From source, with the [PlatformIO CLI](https://platformio.org/install/cli):
 
 ```bash
 pio run -e tdisplay-s3-amoled -t upload     # firmware
-pio run -e tdisplay-s3-amoled -t uploadfs   # web setup UI (SPIFFS)
 ```
 
 > This env is for the **1.91" AMOLED variant**. For the regular LCD version, use [`tdisplay-s3`](LilyGo-T-Display-S3).

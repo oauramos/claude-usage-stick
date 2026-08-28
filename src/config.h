@@ -1,9 +1,7 @@
 #pragma once
 
 // ── Firmware version ─────────────────────────────────────
-// "-dev" marks pre-release main-branch builds (the web flasher publishes every
-// merge); the suffix drops in the release PR.
-#define FW_VERSION              "3.0.0-dev"  // Dust — shown on the Mango boot screen
+#define FW_VERSION              "3.0.0"  // Dust — shown on the boot screen
 
 // ── Polling ──────────────────────────────────────────────
 #define DEFAULT_POLL_SEC        120

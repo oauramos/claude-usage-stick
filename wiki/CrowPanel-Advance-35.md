@@ -24,7 +24,6 @@ From source, with the [PlatformIO CLI](https://platformio.org/install/cli):
 
 ```bash
 pio run -e crowpanel-adv-35 -t upload     # firmware
-pio run -e crowpanel-adv-35 -t uploadfs   # web setup UI (SPIFFS)
 ```
 
 ## Controls — touch zones

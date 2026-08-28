@@ -33,14 +33,17 @@ On every boot you enter your PIN with the board's buttons:
 
 Once unlocked, the dashboard appears and refreshes on its own.
 
+On ✨ **Dust** (v3) boards there's a second way: the PIN screen shows the device's address (`unlock: http://…`), and logging into the **[web panel](Web-Panel)** from any browser on your network unlocks the screen too — no button-cycling. The panel is also where settings, token rotation and WiFi changes live after setup.
+
 ## Controls
 
-| Button | Clarity (v1) | 🥭 Mango (v2) |
-| ------ | ------------ | ------------- |
-| A | Cycle brightness | Flip screen 180° |
-| B | Force refresh | Cycle brightness |
-| A+B | — | Force refresh |
-| A+B held on boot | Factory reset | Factory reset |
+| Button | Clarity (v1) | 🥭 Mango (v2) | ✨ Dust (v3) |
+| ------ | ------------ | ------------- | ------------ |
+| A | Cycle brightness | Flip screen 180° | Next screen |
+| A held ≥ 0.6 s | — | — | Flip screen 180° (saved) |
+| B | Force refresh | Cycle brightness | Cycle brightness (saved) |
+| A+B | — | Force refresh | Force refresh |
+| A+B held on boot | Factory reset | Factory reset | Factory reset |
 
 Boards without two buttons map this differently — one button by press duration, or touch zones on the touch panels. Check your [board's guide](Supported-Boards):
 
@@ -51,7 +54,9 @@ Boards without two buttons map this differently — one button by press duration
 
 ## Factory reset
 
-Holding **A+B** while the device boots wipes every stored credential and returns it to setup mode. Use this when changing WiFi networks or rotating your token.
+Holding **A+B** while the device boots wipes every stored credential and returns it to setup mode.
+
+On ✨ Dust boards you rarely need it: WiFi changes and [token rotation](Web-Panel#rotating-the-token) both live in the web panel, an unreachable network drops the device into a recovery portal by itself, and the panel's *Danger zone* can trigger the same full wipe from the browser.
 
 Three boards can't do it in hardware — the T8-S2 and CrowPanel have no way to signal two simultaneous inputs, and GPIO 0 is a strapping pin. Re-flash those boards to wipe their storage.
 

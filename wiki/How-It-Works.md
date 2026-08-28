@@ -13,6 +13,11 @@ The whole device is a loop: ask the Anthropic API a trivial question, read the r
 
 On [Mango](The-UI) firmware the device also fetches model health from [status.claude.com](https://status.claude.com) and draws the Haiku / Sonnet / Opus / Fable mascots.
 
+On [Dust](The-UI#what-dust-adds) firmware (v3) two more things happen:
+
+- Every successful poll drops one sample into a **7-day history ring** (one slot per 30 minutes, ~0.7 KB) persisted on the device's own flash — that's what the chart screen and the panel's chart draw. Time the device spends off shows up as gaps, honestly.
+- Every 6 hours it streams the **Anthropic news feed** from `raw.githubusercontent.com`, reads just the first five headlines (~10 KB of a ~200 KB file) and hangs up.
+
 ## Where your token goes
 
 Nowhere except Anthropic. There is no backend, no telemetry, and no cloud service in the middle — the device talks straight to `api.anthropic.com` over HTTPS. The token itself is stored encrypted on the device's own flash; see [Security](Security).

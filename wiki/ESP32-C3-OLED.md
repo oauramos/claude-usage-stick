@@ -26,7 +26,6 @@ From source, with the [PlatformIO CLI](https://platformio.org/install/cli):
 
 ```bash
 pio run -e esp32c3-oled -t upload     # firmware
-pio run -e esp32c3-oled -t uploadfs   # web setup UI (SPIFFS)
 ```
 
 ## Wiring

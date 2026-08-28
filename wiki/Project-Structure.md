@@ -4,18 +4,25 @@
 assets/           — images (hero, gallery, wiring photos)
 wiki/             — the source of these wiki pages; CI publishes it to the wiki
 src/
-  main.cpp        — boot flow, WiFi, PIN entry, main loop
+  main.cpp        — boot flow, WiFi, PIN entry, buttons, main loop
   hal.cpp/h       — hardware abstraction (display, buttons, battery, backlight)
   api.cpp/h       — HTTPS request to Anthropic, header parsing
+  status.cpp/h    — model health from status.claude.com (Mango+)
   crypto.cpp/h    — AES-256-GCM encrypt/decrypt with PIN-derived key
-  provision.cpp/h — captive portal WiFi AP + web server
-  ui.cpp/h        — all LCD drawing (boot, PIN, dashboard, errors)
-  config.h        — tunables (poll interval, timeouts, PIN attempts)
-data/
-  setup.html      — web UI served during provisioning
+  settings.cpp/h  — all NVS reads/writes, timezone, hostname slug
+  app_state.h     — shared state between main, panel and screens
+  provision.cpp/h — captive portal WiFi AP + web server (setup & WiFi recovery)
+  panel.cpp/h     — the LAN web panel: auth, sessions, /api endpoints (Dust)
+  panel_html.h    — GENERATED from web/panel/panel.html (gzipped PROGMEM)
+  screens.cpp/h   — screen carousel orchestration (Dust)
+  history.cpp/h   — 7-day usage ring on LittleFS (Dust)
+  news.cpp/h      — streaming RSS fetch of Anthropic news (Dust)
+  ui.cpp/h        — all LCD drawing (boot, PIN, dashboard, chart, news, clock)
+  config.h        — tunables (poll interval, timeouts, PIN attempts, feed URL)
 server/
   usage_proxy.py  — optional local caching proxy (reads token from macOS Keychain)
 web/              — the browser-based flasher published to GitHub Pages
+web/panel/        — source + generator of the device's own web panel page
 platformio.ini    — one build env per board
 ```
 
@@ -34,6 +41,8 @@ python3 web/src/build.py
 ```
 
 The board list, firmware versions, and the CSS 3D board models are data inside `web/src/build.py`. Commit the regenerated files with your source change. More detail in [`web/README.md`](https://github.com/oauramos/claude-usage-stick/blob/main/web/README.md).
+
+The device's own [web panel](Web-Panel) works the same way: edit `web/panel/panel.html`, run `python3 web/panel/build.py`, and commit the regenerated `src/panel_html.h` (the page ships inside the firmware, gzipped).
 
 ## Adding a board
 

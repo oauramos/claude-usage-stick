@@ -23,7 +23,7 @@ The practical consequence: if you forget the PIN, the token is unrecoverable. Fa
 
 ## Network
 
-The device talks to `api.anthropic.com` over HTTPS and to `status.claude.com` for model health. There's no backend, no telemetry, and no update channel — see [How it works](How-It-Works).
+The device talks to `api.anthropic.com` over HTTPS, to `status.claude.com` for model health, and (v3, for the news screen) to `raw.githubusercontent.com` for the Anthropic news feed. There's no backend, no telemetry, and no update channel — see [How it works](How-It-Works).
 
 On the T-Display S3 (v3 firmware) the device also **listens** on your LAN: plain HTTP on port 80, serving the [web panel](Web-Panel), plus mDNS so `claude-usage-stick.local` resolves. Nothing is exposed beyond your network unless you port-forward it yourself — don't.
 

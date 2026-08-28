@@ -26,6 +26,14 @@ No hardcoded credentials and no serial console. On first boot the device opens i
 
 Battery level and WiFi signal strength appear as icons in the dashboard header — on boards that have a battery-sense ADC. A few boards can't read battery voltage; their guides say so.
 
+## Screen modes
+
+*✨ Dust (v3) only.* Beyond the dashboard: a **7-day usage chart** built from on-device history, an **Anthropic news** screen fed by the official news feed, and a **desk clock** with your local time. Run one screen statically, or let the **carousel** rotate through the set you pick. Details in [The UI](The-UI#what-dust-adds).
+
+## Web control panel
+
+*✨ Dust (v3) only.* Open `http://claude-usage-stick.local` (or the IP the header shows) from any browser on your network: live usage, every setting, WiFi changes, factory reset, and **token rotation without redoing setup**. Logging in with your PIN there even unlocks the device screen. Full tour in [Web panel](Web-Panel).
+
 ## Button controls
 
 Brightness, screen flip, force refresh, and factory reset, all from the board's buttons. The exact mapping differs per board (some have two buttons, some one, some only a touch screen) — see [Setup and daily use](Setup-and-Daily-Use#controls) or your [board's guide](Supported-Boards).

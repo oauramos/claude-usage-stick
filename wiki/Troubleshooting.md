@@ -16,10 +16,6 @@ Web Serial only exists in **Chrome, Edge, and Opera on desktop**. Firefox and Sa
 
 Its firmware image hasn't been published by CI. Build it from source instead — see [Flashing](Flashing#from-source).
 
-### `uploadfs` fails with "Bad CPU type" on a Mac
-
-The bundled mkspiffs binary is x86-only. Install Rosetta (`softwareupdate --install-rosetta`) or run the repo's `python3 upload_data.py` fallback.
-
 ## WiFi and setup
 
 ### I can't find the `ClaudeMonitor-XXXX` network

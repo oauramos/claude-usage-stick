@@ -22,7 +22,6 @@ From source, with the [PlatformIO CLI](https://platformio.org/install/cli):
 
 ```bash
 pio run -e m5stick-cplus2 -t upload     # firmware
-pio run -e m5stick-cplus2 -t uploadfs   # web setup UI (SPIFFS)
 ```
 
 ## Controls
