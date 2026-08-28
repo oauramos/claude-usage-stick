@@ -1127,22 +1127,13 @@ void uiPinScreen(int pos, const int digits[4]) {
     g.setCursor((SCREEN_W - (int)strlen(hint) * 6) / 2, hintY);
     g.print(hint);
 
-#ifdef DUST_UI
-    // WiFi and the panel are already up on Dust boards — the PIN can be
-    // entered from a browser on the LAN instead of cycling digits on buttons.
-    // Rows at +12/+27/+42 fit both the 320x170 and the 240x135 panel.
-    if (s_netUrl[0]) {
-        char unlockLine[52];
-        snprintf(unlockLine, sizeof(unlockLine), "unlock: %s", s_netUrl);
-        g.setTextColor(C_CYAN, C_BG);
-        g.setCursor((SCREEN_W - (int)strlen(unlockLine) * 6) / 2, boxY + boxH + 27);
-        g.print(unlockLine);
-    }
-#endif
-
+    // The locked screen deliberately does NOT show the panel URL — no reason
+    // to signpost the login endpoint to whoever can see the screen. The
+    // address appears in the dashboard header only after unlock (the panel
+    // still answers on the LAN for anyone who already knows it).
     static const char* note = "Hold A+B on boot = factory reset";
     g.setTextColor(0x4A49, C_BG);
-    g.setCursor((SCREEN_W - (int)strlen(note) * 6) / 2, boxY + boxH + 42);
+    g.setCursor((SCREEN_W - (int)strlen(note) * 6) / 2, boxY + boxH + 32);
     g.print(note);
 #else
     g.print("[A] cycle digit");

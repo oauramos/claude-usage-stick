@@ -35,6 +35,7 @@ What that means in practice:
 
 - **The PIN crosses your LAN in plain HTTP at login.** The ESP32 can't serve browser-trusted TLS, so this is the same trust model as the setup portal: fine on a home network, not for a hostile one. Treat the panel like the device itself — anyone on your LAN who knows the PIN owns it.
 - **Web login failures never wipe the device.** Wrong attempts get an exponential slow-down (HTTP 429) and each guess pays the full 10,000-round key derivation, but only wrong PINs typed **on the physical buttons** count toward the 10-attempt credential wipe. A neighbor on your WiFi can't erase your device by hammering the login.
+- **The locked screen never shows the panel's address.** The URL appears in the dashboard header only after unlock — someone glancing at a locked device isn't handed the login endpoint (mDNS still answers on the LAN, but that requires being on your network already).
 - **Sessions live in RAM only** — HttpOnly, SameSite=Strict cookies that expire after 24 h idle and die on every reboot.
 - **The token is write-only.** No panel endpoint ever returns the token, the WiFi password, or the PIN; the token can only be *replaced*, and replacing it re-requires the PIN.
 - A successful web login while the device sits at the PIN screen also unlocks the screen — it just decrypted the token, which is the same proof the buttons provide.

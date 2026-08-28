@@ -33,7 +33,7 @@ On every boot you enter your PIN with the board's buttons:
 
 Once unlocked, the dashboard appears and refreshes on its own.
 
-On ✨ **Dust** (v3) boards there's a second way: the PIN screen shows the device's address (`unlock: http://…`), and logging into the **[web panel](Web-Panel)** from any browser on your network unlocks the screen too — no button-cycling. The panel is also where settings, token rotation and WiFi changes live after setup.
+On ✨ **Dust** (v3) boards there's a second way: logging into the **[web panel](Web-Panel)** from any browser on your network unlocks the screen too — no button-cycling. Reach it at `claude-usage-stick.local` (or your device-name slug); by design the locked screen doesn't display the address — it appears in the dashboard header only after unlock. The panel is also where settings, token rotation and WiFi changes live after setup.
 
 ## Controls
 

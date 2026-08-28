@@ -1,7 +1,7 @@
 #pragma once
 
 // ── Firmware version ─────────────────────────────────────
-#define FW_VERSION              "3.0.1"  // Dust — shown on the boot screen
+#define FW_VERSION              "3.0.2"  // Dust — shown on the boot screen
 
 // ── Polling ──────────────────────────────────────────────
 #define DEFAULT_POLL_SEC        120

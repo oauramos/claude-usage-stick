@@ -6,10 +6,9 @@ Once the device is on your WiFi, it serves its own control panel to any browser 
 
 ## Finding it
 
-Three ways, all shown by the device itself:
+Two ways:
 
-- The dashboard **header alternates** between the device's name and its address, e.g. `http://192.168.2.136`.
-- The **PIN screen** shows `unlock: http://<ip>` while the device is locked.
+- The dashboard **header alternates** between the device's name and its address, e.g. `http://192.168.2.136` — shown **only after unlock**, deliberately: the locked screen never displays the address, so a passer-by isn't handed the login endpoint.
 - The mDNS name **`http://claude-usage-stick.local`** works from macOS, iOS, Windows and most Linux — no router config needed. (Android's `.local` support is patchy; use the IP there.) If you set a device name during setup, the hostname is that name slugified — `Desk Stick` becomes `desk-stick.local`.
 
 ## Logging in
