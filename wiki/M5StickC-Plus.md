@@ -10,7 +10,7 @@ Part of [Claude Usage Stick](Home). The original board this project was built fo
 | Display | 1.14" ST7789 LCD, 240×135 |
 | Battery | 120 mAh internal |
 | Buttons | Button A (front, GPIO 37) · Button B (side, GPIO 39) |
-| Firmware | ✨ **Dust (v3.1.0)** — display tier **S** (reference board) |
+| Firmware | ✨ **Dust (v3.0.1)** — display tier **S** (reference board) |
 | PlatformIO env | `m5stick-cplus` |
 | Buy | [aliexpress.com](https://s.click.aliexpress.com/e/_c3w3hHWl) |
 
