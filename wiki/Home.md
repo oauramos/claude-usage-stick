@@ -15,7 +15,7 @@ A standalone desk gadget that polls the Anthropic API and shows your rate-limit 
 | **Just flashed it?** | [Setup and daily use](Setup-and-Daily-Use) |
 | **Something's wrong?** | [Troubleshooting](Troubleshooting) |
 
-The fastest path to a working device: pick a board from the [supported list](Supported-Boards), open the **[web flasher](https://oauramos.github.io/claude-usage-stick/)** in Chrome or Edge, and plug the board in over USB-C. No toolchain, no drivers, no clone.
+The fastest path to a working device: pick a board from the [supported list](Supported-Boards), open the **[web flasher](https://oauramos.github.io/claude-usage-stick/)** in Chrome, Edge or Firefox, and plug the board in over USB-C. No toolchain, no drivers, no clone.
 
 ## All pages
 

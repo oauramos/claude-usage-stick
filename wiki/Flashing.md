@@ -8,7 +8,7 @@ Open the **[web flasher](https://oauramos.github.io/claude-usage-stick/)**, pick
 
 Requirements:
 
-- **Chrome, Edge, or Opera on desktop.** The flasher uses the Web Serial API, which Firefox, Safari, and every browser on iOS/Android do not implement.
+- **A browser with Web Serial:** Chrome, Edge or Opera (89+), **Firefox 151+**, or Chrome on Android (138+). Safari doesn't implement it, and neither does any browser on iOS.
 - **A USB-C data cable.** Charge-only cables power the board but carry no data.
 - If the board isn't detected, hold **BOOT** while plugging it in to force download mode.
 

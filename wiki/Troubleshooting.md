@@ -4,7 +4,9 @@
 
 ### The web flasher doesn't show a Connect button
 
-Web Serial only exists in **Chrome, Edge, and Opera on desktop**. Firefox and Safari don't implement it, and neither does any browser on iOS or Android. The page will say so rather than failing silently.
+The flasher needs the Web Serial API: **Chrome, Edge or Opera (89+), Firefox 151+**, or **Chrome on Android (138+)**. Safari doesn't implement it on any platform, and neither does Firefox for Android. The page says so rather than failing silently.
+
+If your Firefox is older than 151, update it — Web Serial landed there recently, and older builds genuinely can't flash.
 
 ### The board isn't in the serial-port list
 
