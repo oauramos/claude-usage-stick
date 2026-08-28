@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 
 // Screen orchestration for the v3 carousel. Drawing lives in ui.cpp; this
 // module owns which screen is current, the dwell timer, and the redraw beats.
@@ -17,4 +17,4 @@ void   screensOnData();        // after a usage fetch: redraw what depends on it
 void   screensOnNews();        // news fetch finished
 void   screensOnSettings();    // mode/mask/dwell changed from the panel
 
-#endif // BOARD_TDISPLAY_S3
+#endif // DUST_UI

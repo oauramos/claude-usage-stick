@@ -1,6 +1,6 @@
 #include "news.h"
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 
 #include <Arduino.h>
 #include <WiFiClientSecure.h>
@@ -229,4 +229,4 @@ bool newsTick() {
     return ok;
 }
 
-#endif // BOARD_TDISPLAY_S3
+#endif // DUST_UI

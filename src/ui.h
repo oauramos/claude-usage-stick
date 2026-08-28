@@ -21,7 +21,7 @@ void uiError(const char* title, const char* detail = nullptr);
 // sliced (and, on the T-Display S3, pump the web panel between slices).
 void uiLockoutStatic(int attempts, int maxAttempts, int lockoutSec);
 void uiLockoutTick(int secondsLeft);
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 // LAN URL shown on the PIN screen and alternated into the dashboard header.
 void uiSetNetInfo(const char* url);
 // Header label (from dev_name, uppercased); empty falls back to "CLAUDE USAGE".

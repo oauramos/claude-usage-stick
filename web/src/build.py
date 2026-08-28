@@ -102,9 +102,9 @@ BOARDS3D = {
 
 BOARDS = [
     # env, name, mcu, display, firmware tag (label, is_mango), chip family, fw version
-    ("m5stick-cplus", "M5StickC Plus", "ESP32-PICO", '1.14&Prime; 240&times;135', ("&#129389; Mango &middot; tier S", True), "ESP32", "2.0.0"),
+    ("m5stick-cplus", "M5StickC Plus", "ESP32-PICO", '1.14&Prime; 240&times;135', ("&#10024; Dust &middot; tier S", True), "ESP32", "3.1.0"),
     ("m5stick-cplus2", "M5StickC Plus2", "ESP32-PICO-V3", '1.14&Prime; 240&times;135', ("Clarity v1", False), "ESP32", "1.0.0"),
-    ("tdisplay-s3", "LilyGo T-Display S3", "ESP32-S3", '1.9&Prime; 320&times;170', ("&#10024; Dust &middot; tier L", True), "ESP32-S3", "3.0.0"),
+    ("tdisplay-s3", "LilyGo T-Display S3", "ESP32-S3", '1.9&Prime; 320&times;170', ("&#10024; Dust &middot; tier L", True), "ESP32-S3", "3.1.0"),
     ("t8-s2", "LilyGo T8 ESP32-S2", "ESP32-S2", '1.14&Prime; 135&times;240', ("Clarity v1", False), "ESP32-S2", "1.0.0"),
     ("crowpanel-adv-35", "CrowPanel Advance 3.5&Prime;", "ESP32-S3", '3.5&Prime; 480&times;320 touch', ("Clarity v1", False), "ESP32-S3", "1.0.0"),
     ("tdisplay-s3-amoled", "T-Display S3 AMOLED", "ESP32-S3", '1.91&Prime; 240&times;536', ("Clarity v1", False), "ESP32-S3", "1.0.0"),

@@ -318,7 +318,7 @@ void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi
   #define SY(n) (n)
 #endif
 
-#if defined(BOARD_CROWPANEL_ADV_35) || defined(BOARD_TDISPLAY_S3)
+#if defined(BOARD_CROWPANEL_ADV_35) || defined(DUST_UI)
 // The CrowPanel's ILI9488 is too slow to clear-then-redraw on screen without flicker,
 // and the T-Display S3's v3 screen carousel would flash on every transition.
 // The dashboard (and the S3's other screens) render into an off-screen sprite (PSRAM)
@@ -402,11 +402,16 @@ void uiApplyRotation(bool flipped) {
     halClear(C_BG);
 }
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 // The header's left text alternates between the device label and the panel URL
 // on the 10s clock tick. Both strings print opaque at a fixed width so each
-// phase fully covers the other without a fillRect (no flicker). 28 chars stops
-// short of the right cluster's worst-case extent (~x187).
+// phase fully covers the other without a fillRect (no flicker). The pad stops
+// short of the right cluster's worst-case extent (~x187 at 320px, ~x137 at 240px).
+#ifdef BOARD_TDISPLAY_S3
+  #define HDR_LEFT_FMT "%-28.28s"
+#else
+  #define HDR_LEFT_FMT "%-21.21s"
+#endif
 static char s_netUrl[40]      = "";
 static char s_hdrLabel[29]    = "CLAUDE USAGE";
 static bool s_hdrShowUrl      = false;
@@ -421,14 +426,18 @@ void uiSetHeaderLabel(const char* name) {
     for (char* p = s_hdrLabel; *p; p++) *p = toupper((unsigned char)*p);
 }
 
+// Which model mascots render (panel setting) — shared by both tiers.
+static uint8_t s_mdlMask = 0x0F;
+void uiSetModelMask(uint8_t mask) { s_mdlMask = mask & 0x0F ? mask & 0x0F : 0x0F; }
+
 template <class GFX>
 static void drawHeaderLeft(GFX& g) {
     g.setTextColor(C_TEXT, C_HEAD);
     g.setTextSize(1);
     g.setCursor(4, 5);
-    g.printf("%-28.28s", (s_hdrShowUrl && s_netUrl[0]) ? s_netUrl : s_hdrLabel);
+    g.printf(HDR_LEFT_FMT, (s_hdrShowUrl && s_netUrl[0]) ? s_netUrl : s_hdrLabel);
 }
-#endif // BOARD_TDISPLAY_S3
+#endif // DUST_UI
 
 // Clawd, 18x5 px (MSB = leftmost column). The row-1 gaps at cols 5/12 are the eyes.
 // Shared by the S3 mascot row and the M5StickC Plus status-panel mascot.
@@ -498,10 +507,6 @@ static void drawMascot(GFX& g, int x, int y, int W, int rh, uint16_t color, bool
 #define MASCOT_NAME_Y   156
 #define MASCOT_CX(i) (MASCOT_CX0 + (i) * MASCOT_SPACING)
 #define MASCOT_X(i)  (MASCOT_CX(i) - MASCOT_W / 2)
-
-// Which mascots render (panel setting) — the N enabled ones re-center evenly.
-static uint8_t s_mdlMask = 0x0F;
-void uiSetModelMask(uint8_t mask) { s_mdlMask = mask & 0x0F ? mask & 0x0F : 0x0F; }
 
 // Fills idx[] with the enabled model indices and cx[] with their centers;
 // returns N. Shared by the status panel and the blink tick so eyes always
@@ -599,7 +604,8 @@ void uiBlinkTick(bool closed) {
 #define PANEL_ROW0_Y    98
 #define PANEL_ROW1_Y    114
 
-static void drawModelsDivider(TFT_eSPI& g, int capY, int lineY) {
+template <class GFX>
+static void drawModelsDivider(GFX& g, int capY, int lineY) {
     const char* cap = "MODELS";
     int capW = (int)strlen(cap) * 6;
     int cx   = SCREEN_W / 2;
@@ -612,24 +618,30 @@ static void drawModelsDivider(TFT_eSPI& g, int capY, int lineY) {
                     (SCREEN_W - 14) - (cx + capW / 2 + 6), C_HEAD_DK);
 }
 
-static void drawStatusPanel(TFT_eSPI& g) {
+template <class GFX>
+static void drawStatusPanel(GFX& g) {
     static const char* names[4] = {"HAIKU", "SONNET", "OPUS", "FABLE"};
     bool up[4] = {s_modelStatus.haikuUp, s_modelStatus.sonnetUp,
                   s_modelStatus.opusUp,  s_modelStatus.fableUp};
     drawModelsDivider(g, PANEL_CAP_Y, PANEL_LINE_Y);
 
-    // One Clawd to the left of the grid reflects overall health: Claude orange when
-    // every model is up, gray with X-eyes if any is down, gray (no X) until fetched.
+    // One Clawd to the left of the grid reflects overall health of the models
+    // the user shows: Claude orange when every one is up, gray with X-eyes if
+    // any is down, gray (no X) until the status was fetched at least once.
     bool anyDown = false;
-    for (int i = 0; i < 4; i++) anyDown = anyDown || !up[i];
+    for (int i = 0; i < 4; i++)
+        if (s_mdlMask & (1 << i)) anyDown = anyDown || !up[i];
     bool dead = s_modelStatus.ok && anyDown;
     drawMascot(g, PANEL_MASCOT_X, PANEL_MASCOT_Y, 18 * PANEL_MASCOT_S, PANEL_MASCOT_S * 2,
                (!s_modelStatus.ok || dead) ? C_DIM : C_HEAD, dead);
 
+    // Grid packs the enabled models into consecutive slots.
     const int colX[2] = {PANEL_COL0_X, PANEL_COL1_X};
     const int rowY[2] = {PANEL_ROW0_Y, PANEL_ROW1_Y};
     g.setTextSize(1);
+    int k = 0;
     for (int i = 0; i < 4; i++) {
+        if (!(s_mdlMask & (1 << i))) continue;
         const char* st;
         uint16_t col;
         if (!s_modelStatus.ok) { st = "?";    col = C_DIM;  }   // status never fetched
@@ -638,31 +650,36 @@ static void drawStatusPanel(TFT_eSPI& g) {
         char buf[16];
         snprintf(buf, sizeof(buf), "%-6s %s", names[i], st);   // padded name aligns the status column
         g.setTextColor(col, C_BG);
-        g.setCursor(colX[i % 2], rowY[i / 2]);
+        g.setCursor(colX[k % 2], rowY[k / 2]);
         g.print(buf);
+        k++;
     }
 }
 
 // Blink the panel mascot's eyes — only when he's the healthy (orange) Clawd; the
-// gray "something's down"/unknown Clawd stays still. The 2s liveness blink.
+// gray "something's down"/unknown Clawd stays still. Eyes go into the retained
+// sprite and one push refreshes the panel (this tier is Dust-only now).
 void uiBlinkTick(bool closed) {
     bool up[4] = {s_modelStatus.haikuUp, s_modelStatus.sonnetUp,
                   s_modelStatus.opusUp,  s_modelStatus.fableUp};
     bool anyDown = false;
-    for (int i = 0; i < 4; i++) anyDown = anyDown || !up[i];
+    for (int i = 0; i < 4; i++)
+        if (s_mdlMask & (1 << i)) anyDown = anyDown || !up[i];
     if (!s_modelStatus.ok || anyDown) return;
 
+    auto& g = dashTarget();
     int ch = PANEL_MASCOT_S * 2;
     int ey = PANEL_MASCOT_Y + ch;   // eye row 1
     for (int e = 0; e < 2; e++) {
         int ex = PANEL_MASCOT_X + CLAWD_EYE_COLS[e] * PANEL_MASCOT_S;
         if (closed) {
-            lcd.fillRect(ex, ey, PANEL_MASCOT_S, ch, C_HEAD);           // lid down
-            lcd.fillRect(ex, ey + ch / 2 - 1, PANEL_MASCOT_S, 2, C_BG); // shut line
+            g.fillRect(ex, ey, PANEL_MASCOT_S, ch, C_HEAD);           // lid down
+            g.fillRect(ex, ey + ch / 2 - 1, PANEL_MASCOT_S, 2, C_BG); // shut line
         } else {
-            lcd.fillRect(ex, ey, PANEL_MASCOT_S, ch, C_BG);            // eye open
+            g.fillRect(ex, ey, PANEL_MASCOT_S, ch, C_BG);            // eye open
         }
     }
+    UI_PUSH_DASH();
 }
 #endif // BOARD_TDISPLAY_S3 four-mascot row vs M5StickC Plus status panel
 
@@ -705,10 +722,11 @@ static void drawHeaderRight(GFX& g, int rssi, unsigned long ago, int batPct) {
 }
 #endif // MANGO_UI
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 // ── v3 carousel screens (chart / news / clock) ──────────────────────────────
 // All render into the retained sprite and push whole — flicker-free by
-// construction, so no partial-update choreography is needed.
+// construction, so no partial-update choreography is needed. Geometry derives
+// from SCREEN_W/H where it can; the few tier-specific numbers sit inline.
 
 void uiHeaderAlternate() { s_hdrShowUrl = !s_hdrShowUrl; }
 
@@ -736,7 +754,7 @@ void uiChartScreen(const HistSlot* slots, uint32_t newestEpoch,
     g.setCursor(SCREEN_W - 10 - 2 * 6, 22);
     g.print("7D");
 
-    const int px0 = 10, px1 = 309, py0 = 34, py1 = 136;
+    const int px0 = 10, px1 = SCREEN_W - 11, py0 = 34, py1 = SCREEN_H - 34;
 
     bool any = false;
     for (int i = 0; i < HIST_SLOTS && !any; i++) any = slots[i].h5 != HIST_EMPTY;
@@ -832,8 +850,13 @@ void uiNewsScreen(const NewsState& news, unsigned long lastFetchMs, int rssi) {
     }
 
     // Three items: two wrapped title lines + a date line each
-    const int perLine = 50;   // (320-20)/6
-    int y = 36;
+    const int perLine = (SCREEN_W - 20) / 6;
+#ifdef BOARD_TDISPLAY_S3
+    const int itemY0 = 36, dateDy = 22, sepDy = 32, step = 38;
+#else
+    const int itemY0 = 32, dateDy = 20, sepDy = 29, step = 32;   // 240x135
+#endif
+    int y = itemY0;
     for (int i = 0; i < 3 && i < news.count; i++) {
         const NewsItem& it = news.items[i];
         const char* t = it.title;
@@ -841,7 +864,7 @@ void uiNewsScreen(const NewsState& news, unsigned long lastFetchMs, int rssi) {
         int split = len;
         if (len > perLine) {
             split = perLine;
-            while (split > 30 && t[split] != ' ') split--;   // wrap on a space
+            while (split > perLine / 2 && t[split] != ' ') split--;   // wrap on a space
             if (t[split] != ' ') split = perLine;
         }
         g.setTextColor(C_TEXT, C_BG);
@@ -853,10 +876,10 @@ void uiNewsScreen(const NewsState& news, unsigned long lastFetchMs, int rssi) {
             for (int c = 0; c < perLine && rest[c]; c++) g.print(rest[c]);
         }
         g.setTextColor(C_HEAD_DK, C_BG);
-        g.setCursor(10, y + 22);
+        g.setCursor(10, y + dateDy);
         g.print(it.date[0] ? it.date : "-");
-        if (i < 2) g.drawFastHLine(10, y + 32, SCREEN_W - 20, C_BAR_BG);
-        y += 38;
+        if (i < 2) g.drawFastHLine(10, y + sepDy, SCREEN_W - 20, C_BAR_BG);
+        y += step;
     }
     UI_PUSH_DASH();
 }
@@ -881,40 +904,45 @@ void uiClockScreen(const UsageData& data, unsigned long lastFetchMs, int rssi) {
         strlcpy(dateLine, "no time sync", sizeof(dateLine));
     }
 
+#ifdef BOARD_TDISPLAY_S3
+    const int tSz = 5, tY = 44, dY = 96, barY = 140, barW = 84, bar1X = 14, bar2X = 170;
+#else
+    const int tSz = 4, tY = 38, dY = 82, barY = 116, barW = 56, bar1X = 8, bar2X = 124;
+#endif
     g.setTextColor(C_TEXT, C_BG);
-    g.setTextSize(5);   // 5 glyphs x 30px = 150px wide, 40px tall
-    g.setCursor((SCREEN_W - 5 * 30) / 2 + 2, 44);
+    g.setTextSize(tSz);   // 5 glyphs of 6*tSz px
+    g.setCursor((SCREEN_W - 5 * 6 * tSz) / 2 + 2, tY);
     g.print(hhmm);
 
     g.setTextSize(2);
     g.setTextColor(C_DIM, C_BG);
-    g.setCursor((SCREEN_W - (int)strlen(dateLine) * 12) / 2, 96);
+    g.setCursor((SCREEN_W - (int)strlen(dateLine) * 12) / 2, dY);
     g.print(dateLine);
 
     // Micro usage bars along the bottom
     auto microBar = [&](int x, const char* label, float pct) {
         g.setTextSize(1);
         g.setTextColor(C_DIM, C_BG);
-        g.setCursor(x, 140);
+        g.setCursor(x, barY);
         g.print(label);
-        int bx = x + 18, bw = 84;
-        g.fillRect(bx, 140, bw, 8, C_BAR_BG);
+        int bx = x + 18, bw = barW;
+        g.fillRect(bx, barY, bw, 8, C_BAR_BG);
         char ps[8] = "--%";
         if (data.ok) {
             int fw = constrain((int)(bw * pct / 100.0f), 0, bw);
-            if (fw > 0) g.fillRect(bx, 140, fw, 8, C_HEAD);
+            if (fw > 0) g.fillRect(bx, barY, fw, 8, C_HEAD);
             snprintf(ps, sizeof(ps), "%.0f%%", pct);
         }
         g.setTextColor(C_TEXT, C_BG);
-        g.setCursor(bx + bw + 6, 140);
+        g.setCursor(bx + bw + 6, barY);
         g.print(ps);
     };
-    microBar(14, "5H", data.h5);
-    microBar(170, "7D", data.d7);
+    microBar(bar1X, "5H", data.h5);
+    microBar(bar2X, "7D", data.d7);
 
     UI_PUSH_DASH();
 }
-#endif // BOARD_TDISPLAY_S3
+#endif // DUST_UI carousel screens
 
 void uiInit() {
     lcd.setRotation(SCREEN_ROT);
@@ -1099,22 +1127,23 @@ void uiPinScreen(int pos, const int digits[4]) {
     g.setCursor((SCREEN_W - (int)strlen(hint) * 6) / 2, hintY);
     g.print(hint);
 
-    static const char* note = "Hold A+B on boot = factory reset";
-    g.setTextColor(0x4A49, C_BG);
-    g.setCursor((SCREEN_W - (int)strlen(note) * 6) / 2, boxY + boxH + 32);
-    g.print(note);
-
-#ifdef BOARD_TDISPLAY_S3
-    // WiFi and the panel are already up on this board — the PIN can be entered
-    // from a browser on the LAN instead of cycling digits on the buttons.
+#ifdef DUST_UI
+    // WiFi and the panel are already up on Dust boards — the PIN can be
+    // entered from a browser on the LAN instead of cycling digits on buttons.
+    // Rows at +12/+27/+42 fit both the 320x170 and the 240x135 panel.
     if (s_netUrl[0]) {
         char unlockLine[52];
         snprintf(unlockLine, sizeof(unlockLine), "unlock: %s", s_netUrl);
         g.setTextColor(C_CYAN, C_BG);
-        g.setCursor((SCREEN_W - (int)strlen(unlockLine) * 6) / 2, boxY + boxH + 48);
+        g.setCursor((SCREEN_W - (int)strlen(unlockLine) * 6) / 2, boxY + boxH + 27);
         g.print(unlockLine);
     }
 #endif
+
+    static const char* note = "Hold A+B on boot = factory reset";
+    g.setTextColor(0x4A49, C_BG);
+    g.setCursor((SCREEN_W - (int)strlen(note) * 6) / 2, boxY + boxH + 42);
+    g.print(note);
 #else
     g.print("[A] cycle digit");
     g.setCursor(SX(148), hintY);
@@ -1150,7 +1179,7 @@ void uiConnecting(const char* ssid, int attempt) {
 }
 
 void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int batPct) {
-#if defined(BOARD_CROWPANEL_ADV_35) || defined(BOARD_TDISPLAY_S3)
+#if defined(BOARD_CROWPANEL_ADV_35) || defined(DUST_UI)
     auto& g = dashTarget();
     g.fillSprite(C_BG);
 #else
@@ -1160,7 +1189,7 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
 
     // Header
     g.fillRect(0, 0, SCREEN_W, SY(18), C_HEAD);
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
     drawHeaderLeft(g);
 #else
     g.setTextColor(C_TEXT, C_HEAD);
@@ -1249,7 +1278,7 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
 
 void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi) {
     if (!data.ok) return;   // error layout is owned by the full uiDashboard
-#if defined(BOARD_CROWPANEL_ADV_35) || defined(BOARD_TDISPLAY_S3)
+#if defined(BOARD_CROWPANEL_ADV_35) || defined(DUST_UI)
     auto& g = dashTarget();   // update the retained sprite, then push it once
 #else
     auto& g = lcd;
@@ -1257,7 +1286,7 @@ void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi
 
     // Header "rssi / ago": repaint the header band over its own colour.
     unsigned long ago = (millis() - lastFetchMs) / 1000;
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
     // Repaint the left text with the current phase — screensTick() owns the
     // label ↔ URL alternation via uiHeaderAlternate().
     drawHeaderLeft(g);
