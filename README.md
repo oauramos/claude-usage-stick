@@ -11,9 +11,9 @@
 
 <a href="https://oauramos.github.io/claude-usage-stick/"><img src="assets/hero.gif" width="820" alt="Claude Usage Stick — a LilyGo T-Display S3 turning slowly, its screen showing the 5-hour and 7-day usage bars, reset countdowns and the four model mascots"/></a>
 
-## [ ⚡ >>>> Flash your ESP32 here! <<<< ⚡ ](https://oauramos.github.io/claude-usage-stick/)
+## [⚡ Flash your ESP32 — right from your browser](https://oauramos.github.io/claude-usage-stick/)
 
-*No toolchain, no drivers, no clone — just Chrome or Edge and a USB-C cable.*
+*No toolchain, no drivers, no clone — just Chrome, Edge or Firefox and a USB-C cable.*
 
 *5-hour & 7-day usage windows · reset countdowns · model health mascots · PIN-encrypted token · web control panel · screen carousel with 7-day chart, Anthropic news & clock (✨ Dust, v3)*
 
@@ -48,7 +48,7 @@ A standalone desk gadget that polls the Anthropic API and shows your Claude Code
 
 ### ⚡ Flash it from your browser
 
-**[oauramos.github.io/claude-usage-stick](https://oauramos.github.io/claude-usage-stick/)** — pick your board, plug it in over USB-C, hit Flash. Nothing to install; Chrome or Edge on desktop.
+**[oauramos.github.io/claude-usage-stick](https://oauramos.github.io/claude-usage-stick/)** — pick your board, plug it in over USB-C, hit Flash. Nothing to install; any desktop browser with Web Serial — Chrome, Edge, Opera, or Firefox 151+.
 
 ### Or build from source
 

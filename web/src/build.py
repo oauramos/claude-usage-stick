@@ -186,7 +186,7 @@ MOCK_ACTIONS = '''    <div class="dlg-actions">
 REAL_ACTIONS = '''    <div class="dlg-actions">
       <esp-web-install-button id="espInstall">
         <button class="btn-primary" slot="activate">Connect &amp; flash</button>
-        <span class="dlg-unsup" slot="unsupported">Web Serial isn't available in this browser — use Chrome or Edge on desktop.</span>
+        <span class="dlg-unsup" slot="unsupported">Web Serial isn't available in this browser — use Chrome, Edge, Opera, or Firefox 151+ on desktop.</span>
         <span class="dlg-unsup" slot="not-allowed">Flashing needs a secure (HTTPS) page.</span>
       </esp-web-install-button>
       <button class="btn-ghost" id="dlgCancel">Cancel</button>
