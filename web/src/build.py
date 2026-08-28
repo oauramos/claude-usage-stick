@@ -151,27 +151,10 @@ def card(env, name, mcu, display, fw, chip, _version):
   <span class="sel-dot"></span>
 </div>'''
 
-def hero3d():
-    """Big T-Display S3 in a molded case, running the live CSS tier-L dashboard.
-
-    The screen is the same .dev-dash recreation used in the features section
-    rather than a screenshot: a PNG of the UI goes stale the moment a label
-    changes (the old asset still said "5-HOUR WINDOW" three releases later).
-    290x154 is exactly the panel's 320:170 ratio, so it drops straight in.
-    """
-    screen = ('<i class="scr scr-live" style="left:48px;top:8px;width:290px;height:154px">'
-              '<i class="dev dev-dash">'
-              '<i class="bar-hd dev-xs"><i>CLAUDE USAGE</i><i>100%</i></i>'
-              '<i class="win dev-xs"><i class="fill"></i><i>5-HOUR</i><i>62%</i></i>'
-              '<i class="win dev-xs"><i class="fill d2"></i><i>7-DAY</i><i>31%</i></i>'
-              '<i class="rest dev-xs"><i>5H RESET <b>4h34m</b></i><i>7D RESET <b>2d15h</b></i></i>'
-              '<i class="models dev-xs">'
-              '<span><i class="clawd blink"></i>HAIKU</span>'
-              '<span><i class="clawd blink"></i>SONNET</span>'
-              '<span><i class="clawd blink"></i>OPUS</span>'
-              '<span><i class="clawd blink"></i>FABLE</span>'
-              '</i></i></i>')
-    front = (screen
+def hero3d(screen_url):
+    """Big T-Display S3 in a molded case, with the real Mango tier-L screenshot on screen."""
+    front = (f'<i class="scr scr-img" style="left:48px;top:8px;width:290px;height:154px;'
+             f'background-image:url({screen_url})"></i>'
              + el("rbtn gr", 14, 38, 18, 18) + el("rbtn gr", 14, 114, 18, 18))
     back = (el("grille", 50, 52, 270, 66)
             + el("screw", 12, 12, 8, 8) + el("screw", 350, 12, 8, 8)
@@ -310,7 +293,7 @@ def build():
     web = WEB
     (web / "manifests").mkdir(parents=True, exist_ok=True)
 
-    html = html.replace("<!-- HERO_3D -->", hero3d())
+    html = html.replace("<!-- HERO_3D -->", hero3d("assets/tds3-screen.png"))
 
     for mock, real in [(MOCK_ACTIONS, REAL_ACTIONS), (MOCK_NOTE_CSS, REAL_NOTE_CSS),
                        (MOCK_JS_REFS, REAL_JS_REFS), (MOCK_JS_SELECT, REAL_JS_SELECT),
