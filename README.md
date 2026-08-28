@@ -19,6 +19,27 @@
 
 A standalone desk gadget that polls the Anthropic API and shows your Claude Code rate-limit usage in real time — no computer, no app, no cloud. Flash it, connect it to WiFi from your phone, and it just sits there telling you how much runway you have left.
 
+## What it does
+
+**On every board**
+
+- **Live usage bars** — the 5-hour and 7-day rate-limit windows, read straight from the `anthropic-ratelimit-unified-*` headers, refreshed every 30 s – 5 min
+- **Reset countdowns** — exactly how long until each window frees up
+- **Model health mascots** — Haiku / Sonnet / Opus / Fable from status.claude.com as blinking Clawds (Mango v2+)
+- **PIN-encrypted token** — AES-256-GCM on the device's own flash; the PIN is never stored, and 10 wrong tries wipes it
+- **Captive-portal setup** — no hardcoded credentials, no serial console; configure it from your phone
+
+**✨ New in Dust (v3 — [T-Display S3](https://github.com/oauramos/claude-usage-stick/wiki/LilyGo-T-Display-S3) first)**
+
+- **[Web control panel](https://github.com/oauramos/claude-usage-stick/wiki/Web-Panel)** — the stick serves its own settings page at `http://claude-usage-stick.local`: every setting, WiFi changes and factory reset from any browser on your LAN. Logging in with the PIN also unlocks the screen
+- **Token rotation without a reset** — paste a fresh `claude setup-token`, confirmed with your PIN and verified live against the API; the stored token is write-only
+- **Screen modes** — static, carousel (dwell 5–30 s) or desk clock; Button A steps through every screen
+- **7-day usage chart** — one sample every 30 minutes, persisted on-device; time spent off shows as honest gaps
+- **Anthropic news** — the latest headlines, streamed from the official feed every 6 h
+- **Clock & timezone** — local time on the clock screen and on the chart's day markers
+- **WiFi recovery** — an unreachable network opens a reconfigure portal (token, PIN and settings survive) instead of a reboot loop
+- **Quality of life** — brightness and screen flip persist across reboots, the header alternates device name ↔ address, mDNS, and the board's full 16 MB flash + 8 MB PSRAM are finally in use
+
 ## Get one running
 
 ### ⚡ Flash it from your browser
