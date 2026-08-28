@@ -9,7 +9,7 @@
 [![Boards](https://img.shields.io/badge/boards-8_supported-44cc11?style=flat-square)](https://github.com/oauramos/claude-usage-stick/wiki/Supported-Boards)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-<img src="https://github.com/user-attachments/assets/c51c5a9e-5a3e-4c3e-97a8-d5a4c5a44263" width="720" alt="Claude Usage Stick — PIN unlock screen and usage dashboard on a LilyGo T-Display S3"/>
+<a href="https://oauramos.github.io/claude-usage-stick/"><img src="assets/hero.gif" width="820" alt="Claude Usage Stick — a LilyGo T-Display S3 turning slowly, its screen showing the 5-hour and 7-day usage bars, reset countdowns and the four model mascots"/></a>
 
 *5-hour & 7-day usage windows · reset countdowns · model health mascots · PIN-encrypted token · web control panel · screen carousel with 7-day chart, Anthropic news & clock (✨ Dust, v3)*
 

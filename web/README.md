@@ -9,7 +9,9 @@ from Chrome or Edge over Web Serial, no toolchain required.
 web/
   index.html            — generated; edit src/template.html instead
   manifests/<env>.json  — generated; one esp-web-tools manifest per board
-  assets/               — photos and the dashboard screenshot used by the page
+  assets/               — photos used by the page (the hero's device screen is
+                          the live CSS recreation, not an image, so it can't
+                          drift from the firmware)
   firmware/             — published by CI, git-ignored locally
     <env>/{bootloader,partitions,boot_app0,firmware}.bin
     available.json      — envs that built successfully; the page grays out the rest
@@ -52,6 +54,20 @@ Pages with the firmware alongside. A board whose build fails does not block the 
 it just doesn't appear in `available.json`, and the page labels its card "build pending".
 
 Enable it once under **Settings → Pages → Source: GitHub Actions**.
+
+## The README's animated hero
+
+`assets/hero.gif` in the repo root is this page's hero section, captured with the
+3D board driven one frame per step — GitHub won't run the page's JavaScript, so the
+turntable has to be baked in. To regenerate it after a hero change, serve `web/`
+locally and, in a Playwright session:
+
+1. inject `* { animation: none !important }` (base styles are the resting state) and
+   pin the usage bars' widths, which rest at 0;
+2. clone-and-replace the node the site's `requestAnimationFrame` loop rotates, so it
+   stops fighting you, then set `transform: rotateY(<angle>deg)` yourself;
+3. screenshot `.hero` for 48 angles across 360°;
+4. `ffmpeg -framerate 12 -i f%03d.png … palettegen/paletteuse` → ~600 KB at 900 px wide.
 
 ## Flash offsets
 
