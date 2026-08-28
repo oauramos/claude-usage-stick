@@ -11,6 +11,10 @@
 
 <a href="https://oauramos.github.io/claude-usage-stick/"><img src="assets/hero.gif" width="820" alt="Claude Usage Stick — a LilyGo T-Display S3 turning slowly, its screen showing the 5-hour and 7-day usage bars, reset countdowns and the four model mascots"/></a>
 
+## [ ⚡ >>>> Flash your ESP32 here! <<<< ⚡ ](https://oauramos.github.io/claude-usage-stick/)
+
+*No toolchain, no drivers, no clone — just Chrome or Edge and a USB-C cable.*
+
 *5-hour & 7-day usage windows · reset countdowns · model health mascots · PIN-encrypted token · web control panel · screen carousel with 7-day chart, Anthropic news & clock (✨ Dust, v3)*
 
 </div>
