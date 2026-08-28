@@ -80,11 +80,13 @@ void uiBootProgress(int percent, const char* label) {
     u8g2.sendBuffer();
 }
 
-void uiSetupScreen(const char* apName, const char* apPass) {
+void uiSetupScreen(const char* apName, const char* apPass, bool reconfigure) {
     u8g2.clearBuffer();
     u8g2.setFont(u8g2_font_4x6_tr);
 
-    // Header centred — "SETUP MODE" = 10 chars × 4px = 40px → x=16
+    // Header centred — "SETUP MODE" = 10 chars × 4px = 40px → x=16.
+    // No room for a reconfigure variant on 72×40; the portal page says it.
+    (void)reconfigure;
     oledStr(16, 6, "SETUP MODE");
     oledHLine(0, 8, 72);
 
@@ -242,28 +244,34 @@ void uiError(const char* title, const char* detail) {
     u8g2.sendBuffer();
 }
 
-void uiLockout(int attempts, int maxAttempts, int lockoutSec) {
+// The OLED redraws its whole frame each tick, so Static only latches the
+// attempt counts the ticks need.
+static int s_lockAttempts = 0, s_lockMax = 0;
+
+void uiLockoutStatic(int attempts, int maxAttempts, int lockoutSec) {
+    (void)lockoutSec;
+    s_lockAttempts = attempts;
+    s_lockMax      = maxAttempts;
+}
+
+void uiLockoutTick(int secondsLeft) {
     u8g2.setFont(u8g2_font_5x7_tr);
+    u8g2.clearBuffer();
 
-    for (int s = lockoutSec; s > 0; s--) {
-        u8g2.clearBuffer();
+    // "WRONG PIN" centred — 9 chars × 5px = 45px → x=13
+    oledStr(13, 10, "WRONG PIN");
 
-        // "WRONG PIN" centred — 9 chars × 5px = 45px → x=13
-        oledStr(13, 10, "WRONG PIN");
+    char atbuf[12];
+    snprintf(atbuf, sizeof(atbuf), "%d / %d", s_lockAttempts, s_lockMax);
+    int aw = u8g2.getStrWidth(atbuf);
+    oledStr((72 - aw) / 2, 22, atbuf);
 
-        char atbuf[12];
-        snprintf(atbuf, sizeof(atbuf), "%d / %d", attempts, maxAttempts);
-        int aw = u8g2.getStrWidth(atbuf);
-        oledStr((72 - aw) / 2, 22, atbuf);
+    char cbuf[12];
+    snprintf(cbuf, sizeof(cbuf), "Wait %ds", secondsLeft);
+    int cw = u8g2.getStrWidth(cbuf);
+    oledStr((72 - cw) / 2, 35, cbuf);
 
-        char cbuf[12];
-        snprintf(cbuf, sizeof(cbuf), "Wait %ds", s);
-        int cw = u8g2.getStrWidth(cbuf);
-        oledStr((72 - cw) / 2, 35, cbuf);
-
-        u8g2.sendBuffer();
-        delay(1000);
-    }
+    u8g2.sendBuffer();
 }
 
 void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi) {
@@ -386,14 +394,40 @@ void uiSetModelStatus(const ModelStatus& s) {
     s_modelStatus = s;
 }
 
-void uiToggleRotation() {
-    static bool flipped = false;
-    flipped = !flipped;
+void uiApplyRotation(bool flipped) {
     // 1 and 3 are the two landscape orientations; XOR-2 toggles between them
     // regardless of which one is this board's default (S3 = 1, M5StickC Plus = 3).
     lcd.setRotation(flipped ? (SCREEN_ROT ^ 2) : SCREEN_ROT);
     halClear(C_BG);
 }
+
+#ifdef BOARD_TDISPLAY_S3
+// The header's left text alternates between the device label and the panel URL
+// on the 10s clock tick. Both strings print opaque at a fixed width so each
+// phase fully covers the other without a fillRect (no flicker). 28 chars stops
+// short of the right cluster's worst-case extent (~x187).
+static char s_netUrl[40]      = "";
+static char s_hdrLabel[29]    = "CLAUDE USAGE";
+static bool s_hdrShowUrl      = false;
+
+void uiSetNetInfo(const char* url) {
+    strlcpy(s_netUrl, url, sizeof(s_netUrl));
+}
+
+void uiSetHeaderLabel(const char* name) {
+    if (!name || !name[0]) return;
+    strlcpy(s_hdrLabel, name, sizeof(s_hdrLabel));
+    for (char* p = s_hdrLabel; *p; p++) *p = toupper((unsigned char)*p);
+}
+
+template <class GFX>
+static void drawHeaderLeft(GFX& g) {
+    g.setTextColor(C_TEXT, C_HEAD);
+    g.setTextSize(1);
+    g.setCursor(4, 5);
+    g.printf("%-28.28s", (s_hdrShowUrl && s_netUrl[0]) ? s_netUrl : s_hdrLabel);
+}
+#endif // BOARD_TDISPLAY_S3
 
 // Clawd, 18x5 px (MSB = leftmost column). The row-1 gaps at cols 5/12 are the eyes.
 // Shared by the S3 mascot row and the M5StickC Plus status-panel mascot.
@@ -675,14 +709,14 @@ void uiBootProgress(int percent, const char* label) {
     halFlush();
 }
 
-void uiSetupScreen(const char* apName, const char* apPass) {
+void uiSetupScreen(const char* apName, const char* apPass, bool reconfigure) {
     halClear(C_BG);
 
     lcd.fillRect(0, 0, SCREEN_W, SY(18), C_ACCENT);
     lcd.setTextColor(C_TEXT, C_ACCENT);
     lcd.setTextSize(TS(1));
     lcd.setCursor(SX(6), SY(5));
-    lcd.print("SETUP MODE");
+    lcd.print(reconfigure ? "WIFI RECONNECT" : "SETUP MODE");
 
     lcd.setTextColor(C_DIM, C_BG);
     lcd.setTextSize(TS(1));
@@ -712,6 +746,13 @@ void uiSetupScreen(const char* apName, const char* apPass) {
     lcd.setTextSize(TS(2));
     lcd.setCursor(SX(10), SY(104));
     lcd.print("192.168.4.1");
+
+    if (reconfigure) {
+        lcd.setTextColor(C_DIM, C_BG);
+        lcd.setTextSize(TS(1));
+        lcd.setCursor(SX(10), SY(124));
+        lcd.print("Token, PIN & settings kept");
+    }
     halFlush();
 }
 
@@ -819,6 +860,16 @@ void uiPinScreen(int pos, const int digits[4]) {
     g.setTextColor(0x4A49, C_BG);
     g.setCursor((SCREEN_W - (int)strlen(note) * 6) / 2, boxY + boxH + 32);
     g.print(note);
+
+#ifdef BOARD_TDISPLAY_S3
+    // WiFi is already up on this board, so the device's LAN address is known
+    // while it sits locked.
+    if (s_netUrl[0]) {
+        g.setTextColor(C_CYAN, C_BG);
+        g.setCursor((SCREEN_W - (int)strlen(s_netUrl) * 6) / 2, boxY + boxH + 48);
+        g.print(s_netUrl);
+    }
+#endif
 #else
     g.print("[A] cycle digit");
     g.setCursor(SX(148), hintY);
@@ -864,10 +915,14 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
 
     // Header
     g.fillRect(0, 0, SCREEN_W, SY(18), C_HEAD);
+#ifdef BOARD_TDISPLAY_S3
+    drawHeaderLeft(g);
+#else
     g.setTextColor(C_TEXT, C_HEAD);
     g.setTextSize(TS(1));
     g.setCursor(SX(4), SY(5));
     g.print("CLAUDE USAGE");
+#endif
 
     unsigned long ago = (millis() - lastFetchMs) / 1000;
 #ifdef MANGO_UI
@@ -957,6 +1012,11 @@ void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi
 
     // Header "rssi / ago": repaint the header band over its own colour.
     unsigned long ago = (millis() - lastFetchMs) / 1000;
+#ifdef BOARD_TDISPLAY_S3
+    // Ride the 10s tick to alternate the left text (device label ↔ panel URL).
+    s_hdrShowUrl = !s_hdrShowUrl;
+    drawHeaderLeft(g);
+#endif
     g.fillRect(SCREEN_W / 2, 0, SCREEN_W / 2, SY(18), C_HEAD);
     g.setTextColor(C_TEXT, C_HEAD);
     g.setTextSize(TS(1));
@@ -1010,7 +1070,7 @@ void uiError(const char* title, const char* detail) {
     halFlush();
 }
 
-void uiLockout(int attempts, int maxAttempts, int lockoutSec) {
+void uiLockoutStatic(int attempts, int maxAttempts, int lockoutSec) {
     halClear(C_BG);
     lcd.setTextColor(C_CRIT, C_BG);
     lcd.setTextSize(TS(2));
@@ -1023,16 +1083,15 @@ void uiLockout(int attempts, int maxAttempts, int lockoutSec) {
     lcd.printf("Attempt %d of %d", attempts, maxAttempts);
     lcd.setCursor(SX(10), SY(75));
     lcd.printf("Locked for %d seconds", lockoutSec);
+}
 
-    for (int s = lockoutSec; s > 0; s--) {
-        lcd.fillRect(SX(10), SY(95), SX(200), SY(20), C_BG);
-        lcd.setTextColor(C_WARN, C_BG);
-        lcd.setTextSize(TS(2));
-        lcd.setCursor(SX(10), SY(95));
-        lcd.printf("%ds", s);
-        halFlush();
-        delay(1000);
-    }
+void uiLockoutTick(int secondsLeft) {
+    lcd.fillRect(SX(10), SY(95), SX(200), SY(20), C_BG);
+    lcd.setTextColor(C_WARN, C_BG);
+    lcd.setTextSize(TS(2));
+    lcd.setCursor(SX(10), SY(95));
+    lcd.printf("%ds", secondsLeft);
+    halFlush();
 }
 
 #endif // BOARD_ESP32C3_OLED
