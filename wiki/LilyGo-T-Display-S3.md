@@ -10,7 +10,7 @@ Part of [Claude Usage Stick](Home). The biggest small-format screen in the lineu
 | Display | 1.9" ST7789 LCD, 320×170, 8-bit parallel |
 | Battery | External via JST connector (not included) |
 | Buttons | Button A (BOOT, GPIO 0) · Button B (KEY, GPIO 14) |
-| Firmware | ✨ **Dust (v3.0.0)** — display tier **L** (reference board) |
+| Firmware | ✨ **Dust (v3.1.0)** — display tier **L** (reference board) |
 | PlatformIO env | `tdisplay-s3` |
 | Buy | [aliexpress.com](https://s.click.aliexpress.com/e/_c4rvB1Mv) |
 

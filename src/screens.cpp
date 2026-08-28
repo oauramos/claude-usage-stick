@@ -1,6 +1,6 @@
 #include "screens.h"
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -135,4 +135,4 @@ void screensOnSettings() {
     screensShow(s_current);
 }
 
-#endif // BOARD_TDISPLAY_S3
+#endif // DUST_UI

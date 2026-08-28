@@ -29,7 +29,7 @@ A standalone desk gadget that polls the Anthropic API and shows your Claude Code
 - **PIN-encrypted token** — AES-256-GCM on the device's own flash; the PIN is never stored, and 10 wrong tries wipes it
 - **Captive-portal setup** — no hardcoded credentials, no serial console; configure it from your phone
 
-**✨ New in Dust (v3 — [T-Display S3](https://github.com/oauramos/claude-usage-stick/wiki/LilyGo-T-Display-S3) first)**
+**✨ New in Dust (v3 — [T-Display S3](https://github.com/oauramos/claude-usage-stick/wiki/LilyGo-T-Display-S3) and [M5StickC Plus](https://github.com/oauramos/claude-usage-stick/wiki/M5StickC-Plus))**
 
 - **[Web control panel](https://github.com/oauramos/claude-usage-stick/wiki/Web-Panel)** — the stick serves its own settings page at `http://claude-usage-stick.local`: every setting, WiFi changes and factory reset from any browser on your LAN. Logging in with the PIN also unlocks the screen
 - **Token rotation without a reset** — paste a fresh `claude setup-token`, confirmed with your PIN and verified live against the API; the stored token is write-only

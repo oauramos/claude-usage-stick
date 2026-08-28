@@ -4,10 +4,11 @@
  *
  * PIN entry: A cycles the digit, B confirms
  * Dashboard (Clarity): A cycles brightness, B forces a refresh
- * Dashboard (Mango):   A flips the screen, B cycles brightness, A+B force refresh
+ * Screens (Dust):      A tap = next screen, A held = flip, B = brightness,
+ *                      A+B = force refresh
  * A+B held on boot: factory reset → wipe NVS → re-enter setup
  *
- * Boot order differs per board: the T-Display S3 brings WiFi up before the PIN
+ * Boot order differs per board: DUST_UI boards bring WiFi up before the PIN
  * (the LAN address is shown while locked, and a failed connect falls back to a
  * WiFi-reconfigure portal); every other board keeps the PIN-first order.
  *
@@ -54,7 +55,7 @@ static bool enterPin(char* pinOut, int maxLen) {
         uiPinScreen(pos, digits);
         while (true) {
             halUpdate();
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
             panelService();
             if (panelUnlockPending()) return false;
 #endif
@@ -119,7 +120,7 @@ static void refresh() {
     uiSetModelStatus(g_models);
 #endif
     g_lastFetchMs = millis();
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
     screensOnData();   // records history + redraws whichever screen shows it
 #else
     uiDashboard(g_usage, g_lastFetchMs, WiFi.RSSI(), halBatPercent());
@@ -156,7 +157,7 @@ static void unlockPhase(int progressPct) {
         for (int s = lockSec; s > 0 && !webUnlocked; s--) {
             uiLockoutTick(s);
             for (int slice = 0; slice < 50; slice++) {
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
                 panelService();
                 if (panelUnlockPending()) { webUnlocked = true; break; }
 #endif
@@ -164,7 +165,7 @@ static void unlockPhase(int progressPct) {
             }
         }
     }
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
     panelConsumeUnlock();
 #endif
     g_unlocked = true;
@@ -174,7 +175,7 @@ static void unlockPhase(int progressPct) {
     halBtnBWasPressed();
 }
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 // WiFi before the PIN on this board: the creds need no PIN, and the device's
 // LAN address is already known (and shown) while it sits locked. A dead network
 // lands in the reconfigure portal instead of the old infinite reboot loop.
@@ -272,7 +273,7 @@ void setup() {
     if (g_settings.flip) uiApplyRotation(true);
 #endif
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
     netPhase();
     uiBootProgress(78, "Preparing storage...");
     historyInit();   // first boot formats the data partition (~1-3s)
@@ -291,7 +292,7 @@ void setup() {
 void loop() {
     halUpdate();
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
     panelService();
     panelConsumeUnlock();   // post-boot logins don't need the boot-phase handoff
     uint8_t acts = panelTakeAction();
@@ -305,7 +306,7 @@ void loop() {
     if (acts & (PANEL_ACT_REDRAW | PANEL_ACT_FLIP)) screensOnSettings();
 #endif
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
     // A short = next screen · A held ≥600ms = flip · B = brightness ·
     // A+B = force refresh. Latches keep each gesture firing exactly once;
     // every gesture pauses the carousel for 10s.
@@ -356,31 +357,6 @@ void loop() {
             }
         }
     }
-#elif defined(MANGO_UI)
-    // A flips the screen 180°, B cycles brightness, A+B together = force refresh
-    // (the Clarity Button-B action). A single press only commits after a short
-    // window so the other button can still join to form the combo.
-    static unsigned long aPressAt = 0, bPressAt = 0;
-    const unsigned long comboWindowMs = 350;
-    if (halBtnAWasPressed()) aPressAt = millis();
-    if (halBtnBWasPressed()) bPressAt = millis();
-
-    if ((aPressAt && (bPressAt || halBtnBIsPressed())) ||
-        (bPressAt && halBtnAIsPressed())) {
-        aPressAt = bPressAt = 0;
-        refresh();
-    } else if (aPressAt && millis() - aPressAt > comboWindowMs) {
-        aPressAt = 0;
-        g_settings.flip = !g_settings.flip;
-        uiApplyRotation(g_settings.flip);
-        settingsPutU8("flip", g_settings.flip);
-        uiDashboard(g_usage, g_lastFetchMs, WiFi.RSSI(), halBatPercent());
-    } else if (bPressAt && millis() - bPressAt > comboWindowMs) {
-        bPressAt = 0;
-        g_settings.brightness = (g_settings.brightness + 1) % 4;
-        halSetBrightness(g_settings.brightness);
-        settingsPutInt("brightness", g_settings.brightness);
-    }
 #else
     if (halBtnAWasPressed()) {
 #ifdef BOARD_ESP32C3_OLED
@@ -405,7 +381,7 @@ void loop() {
     // Healthy mascots blink every 2s (eyes shut for 150ms) to show liveness.
     static unsigned long lastBlink = 0;
     static bool eyesClosed = false;
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
     // Blinking draws at mascot coordinates — only valid on the dashboard.
     bool blinkScreen = screensCurrent() == SCR_DASH;
     if (!blinkScreen) eyesClosed = false;   // a screen change redrew them open
@@ -422,7 +398,7 @@ void loop() {
     }
 #endif
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
     screensTick();                        // carousel dwell + 10s header beat + clock minute
     if (newsTick()) screensOnNews();      // blocks 2-5s only when a fetch is due
 #else

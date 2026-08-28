@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 
 // LAN control panel: HTTP on :80 in STA mode, login = the device PIN.
 // Single-threaded: handlers run inside panelService(), which is called from
@@ -22,4 +22,4 @@ bool    panelUnlockPending();               // a web login decrypted the token w
 void    panelConsumeUnlock();
 uint8_t panelTakeAction();                  // due actions; reboot/reset wait ~400ms so the response flushes
 
-#endif // BOARD_TDISPLAY_S3
+#endif // DUST_UI

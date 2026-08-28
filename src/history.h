@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 
 #include "api.h"
 
@@ -28,4 +28,4 @@ void historyErase();                         // wipe ring + file (factory reset)
 void historySeedDemo(bool clear);            // synthetic 7 days (or clear) for testing
 #endif
 
-#endif // BOARD_TDISPLAY_S3
+#endif // DUST_UI

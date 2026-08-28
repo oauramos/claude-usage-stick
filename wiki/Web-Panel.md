@@ -1,6 +1,6 @@
 # Web panel
 
-*✨ Dust (v3) on the [LilyGo T-Display S3](LilyGo-T-Display-S3). Other boards will get it as they migrate to v3.*
+*✨ Dust (v3) on the [LilyGo T-Display S3](LilyGo-T-Display-S3) and [M5StickC Plus](M5StickC-Plus). Other boards will get it as they migrate to v3.*
 
 Once the device is on your WiFi, it serves its own control panel to any browser on the same network. Everything you'd want to change after setup lives there — no re-flash, no factory reset, no serial console.
 

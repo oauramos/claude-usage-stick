@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 
 // Anthropic news, streamed from the RSS feed in config.h. The full feed is
 // ~200KB; the fetch reads only until the first NEWS_MAX_ITEMS items and
@@ -25,4 +25,4 @@ extern NewsState g_news;
 // caller can redraw the news screen. Blocks 2–5s while fetching.
 bool newsTick();
 
-#endif // BOARD_TDISPLAY_S3
+#endif // DUST_UI

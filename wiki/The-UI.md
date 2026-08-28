@@ -10,7 +10,7 @@ Firmware releases carry names. Which one your board runs is listed in [Supported
 | v2 | 🥭 **Mango** | Everything in Clarity, plus model-status mascots, header icons, inline countdowns, and screen flip |
 | v3 | ✨ **Dust** | Everything in Mango, plus the [web panel](Web-Panel), screen modes (carousel · 7-day chart · Anthropic news · desk clock), timezone, mDNS, WiFi recovery, and token rotation without a reset |
 
-Boards still on **Clarity** keep the original minimal dashboard until they're migrated to their tier. **Dust** ships on the [T-Display S3](LilyGo-T-Display-S3) first.
+Boards still on **Clarity** keep the original minimal dashboard until they're migrated to their tier. **Dust** runs on the [T-Display S3](LilyGo-T-Display-S3) and the [M5StickC Plus](M5StickC-Plus); the rest follow as they migrate.
 
 ## Display tiers
 
@@ -33,7 +33,7 @@ The Mango dashboard keeps the same header and usage bars on every board, and ada
 
 ## What Dust adds
 
-*T-Display S3 first; other boards follow as they migrate.*
+*On the T-Display S3 (tier L) and M5StickC Plus (tier S); other boards follow as they migrate.*
 
 - **Four screens** — the Mango dashboard, a **7-day usage chart** (one sample per 30 min, gaps where the device was off, day markers at local midnight), **Anthropic news** headlines, and a **desk clock** (local time + micro usage bars)
 - **Three modes** — *Static* (dashboard only), *Carousel* (auto-rotates the screens you pick, 5–30 s dwell, pauses when you press a button), *Clock*. Button A steps through every screen manually in any mode

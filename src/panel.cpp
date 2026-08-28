@@ -1,6 +1,6 @@
 #include "panel.h"
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -574,4 +574,4 @@ uint8_t panelTakeAction() {
     return due;
 }
 
-#endif // BOARD_TDISPLAY_S3
+#endif // DUST_UI

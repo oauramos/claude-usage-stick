@@ -1,6 +1,6 @@
 #include "history.h"
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef DUST_UI
 
 #include <Arduino.h>
 #include <LittleFS.h>
@@ -148,4 +148,4 @@ void historySeedDemo(bool clear) {
 }
 #endif
 
-#endif // BOARD_TDISPLAY_S3
+#endif // DUST_UI
