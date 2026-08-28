@@ -4,9 +4,9 @@ Eight boards run the firmware today. Each has its own guide with pinouts, contro
 
 | Board | MCU | Display | Firmware | PlatformIO env | Buy |
 | ----- | --- | ------- | -------- | -------------- | --- |
-| [M5StickC Plus](M5StickC-Plus) | ESP32-PICO | 1.14" 240×135 LCD | ✨ **Dust (v3.0.1)** · tier S | `m5stick-cplus` | [AliExpress](https://s.click.aliexpress.com/e/_c3w3hHWl) |
+| [M5StickC Plus](M5StickC-Plus) | ESP32-PICO | 1.14" 240×135 LCD | ✨ **Dust (v3.0.2)** · tier S | `m5stick-cplus` | [AliExpress](https://s.click.aliexpress.com/e/_c3w3hHWl) |
 | [M5StickC Plus2](M5StickC-Plus2) | ESP32-PICO-V3-02 | 1.14" 240×135 LCD | Clarity (v1) | `m5stick-cplus2` | [AliExpress](https://s.click.aliexpress.com/e/_c3jkKlNj) |
-| [LilyGo T-Display S3](LilyGo-T-Display-S3) | ESP32-S3 | 1.9" 320×170 LCD | ✨ **Dust (v3.0.1)** · tier L | `tdisplay-s3` | [AliExpress](https://s.click.aliexpress.com/e/_c4rvB1Mv) |
+| [LilyGo T-Display S3](LilyGo-T-Display-S3) | ESP32-S3 | 1.9" 320×170 LCD | ✨ **Dust (v3.0.2)** · tier L | `tdisplay-s3` | [AliExpress](https://s.click.aliexpress.com/e/_c4rvB1Mv) |
 | [LilyGo T8 ESP32-S2](LilyGo-T8-ESP32-S2) | ESP32-S2 | 1.14" 135×240 LCD | Clarity (v1) | `t8-s2` | [AliExpress](https://s.click.aliexpress.com/e/_c2w1HnpJ) |
 | [Elecrow CrowPanel Advance 3.5"](CrowPanel-Advance-35) | ESP32-S3 | 3.5" 480×320 IPS touch | Clarity (v1) | `crowpanel-adv-35` | [AliExpress](https://s.click.aliexpress.com/e/_c4lDErmN) |
 | [LilyGo T-Display S3 AMOLED 1.91"](LilyGo-T-Display-S3-AMOLED) | ESP32-S3 | 1.91" 240×536 AMOLED | Clarity (v1) | `tdisplay-s3-amoled` | [AliExpress](https://s.click.aliexpress.com/e/_c3XNB9Hx) |

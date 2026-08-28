@@ -142,6 +142,13 @@
   }
   #login h1 { font-family: var(--font-display); letter-spacing: 2px; font-size: 18px; margin: 0 0 4px; }
   .hidden { display: none !important; }
+
+  footer {
+    max-width: 760px; margin: 0 auto; padding: 4px 16px 24px;
+    text-align: center; font-size: 12px; color: var(--text-faint);
+  }
+  footer a { color: var(--text-dim); text-decoration: none; }
+  footer a:hover { color: var(--coral); }
 </style>
 </head>
 <body>
@@ -321,6 +328,11 @@
     <div class="status" id="eraseStatus"></div>
   </section>
 </main>
+
+<footer>
+  Claude Usage Stick &middot; made by <a href="https://github.com/oauramos">Ot&aacute;vio Ramos</a>
+  &middot; <a href="https://github.com/oauramos/claude-usage-stick">source on GitHub</a>
+</footer>
 
 <script>
 'use strict';

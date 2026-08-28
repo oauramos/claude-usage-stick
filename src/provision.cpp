@@ -49,6 +49,8 @@ static const char SETUP_HTML[] PROGMEM = R"rawhtml(<!DOCTYPE html>
   .divider{border-top:1px solid var(--border);margin:12px 0 10px}
   .section-label{font-size:.75em;color:var(--dim);text-transform:uppercase;
                  letter-spacing:1px;margin-bottom:10px}
+  .footer{margin-top:14px;text-align:center;font-size:.75em;color:var(--dim)}
+  .footer a{color:var(--cyan);text-decoration:none}
 </style>
 </head>
 <body>
@@ -121,6 +123,8 @@ static const char SETUP_HTML[] PROGMEM = R"rawhtml(<!DOCTYPE html>
     <button type="submit" id="btn">Save & Reboot Device</button>
     <div id="status"></div>
   </form>
+  <div class="footer">Claude Usage Stick · made by
+    <a href="https://github.com/oauramos">Otávio Ramos</a></div>
 </div>
 
 <script>

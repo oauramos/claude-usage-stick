@@ -23,10 +23,11 @@ def main() -> None:
     html = SRC.read_text(encoding="utf-8")
 
     # The device serves this on a LAN with no internet guarantee — refuse any
-    # external reference (fonts, scripts, images) that would break offline.
-    external = re.findall(r'(?:src|href)="https?://[^"]+"', html)
+    # external RESOURCE (fonts, scripts, styles, images) that would break the
+    # page offline. Plain <a href> links are fine: they only matter on click.
+    external = re.findall(r'<(?:link|script|img|iframe)[^>]*(?:src|href)="https?://[^"]+"', html)
     if external:
-        sys.exit(f"panel.html references external resources: {external}")
+        sys.exit(f"panel.html loads external resources: {external}")
 
     buf = io.BytesIO()
     with gzip.GzipFile(fileobj=buf, mode="wb", compresslevel=9, mtime=0) as gz:
