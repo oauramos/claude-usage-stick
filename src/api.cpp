@@ -28,7 +28,7 @@ bool fetchUsage(const char* token, UsageData& out) {
     https.addHeader("anthropic-version", ANTHROPIC_VERSION);
     https.addHeader("anthropic-beta", "oauth-2025-04-20");
     https.addHeader("content-type", "application/json");
-    https.addHeader("User-Agent", "claude-code/2.1.5");
+    https.addHeader("User-Agent", "claude-usage-stick/" FW_VERSION);
     https.setTimeout(API_TIMEOUT_MS);
     https.collectHeaders(RL_HEADERS, RL_HEADER_COUNT);
 
@@ -67,9 +67,10 @@ bool fetchUsage(const char* token, UsageData& out) {
         return false;
     }
 
-    // utilization is 0.0–1.0, convert to percentage
-    out.h5 = h5u.toFloat() * 100.0f;
-    out.d7 = d7u.toFloat() * 100.0f;
+    // utilization is 0.0–1.0, convert to percentage. A missing window keeps a
+    // reset epoch of 0 (toInt on ""), which the UI draws as "--".
+    out.h5 = h5u.length() ? h5u.toFloat() * 100.0f : USAGE_NO_WINDOW;
+    out.d7 = d7u.length() ? d7u.toFloat() * 100.0f : USAGE_NO_WINDOW;
     out.h5ResetEpoch = (uint32_t)h5r.toInt();
     out.d7ResetEpoch = (uint32_t)d7r.toInt();
     out.ok = true;

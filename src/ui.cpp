@@ -195,8 +195,8 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
     u8g2.setFont(u8g2_font_5x7_tr);
 
     // ── Row 1: 5-hour window ─────────────────────────────
-    char h5buf[10];
-    snprintf(h5buf, sizeof(h5buf), "5H %.0f%%", data.h5);
+    char h5buf[10] = "5H none";
+    if (data.h5 >= 0) snprintf(h5buf, sizeof(h5buf), "5H %.0f%%", data.h5);
     oledStr(0, 7, h5buf);
     int rw = u8g2.getStrWidth(h5rst);
     oledStr(72 - rw, 7, h5rst);
@@ -205,8 +205,8 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
     oledHLine(0, 13, 72); // divider
 
     // ── Row 2: 7-day window ──────────────────────────────
-    char d7buf[10];
-    snprintf(d7buf, sizeof(d7buf), "7D %.0f%%", data.d7);
+    char d7buf[10] = "7D none";
+    if (data.d7 >= 0) snprintf(d7buf, sizeof(d7buf), "7D %.0f%%", data.d7);
     oledStr(0, 20, d7buf);
     rw = u8g2.getStrWidth(d7rst);
     oledStr(72 - rw, 20, d7rst);
@@ -376,10 +376,12 @@ static void drawBar(GFX& g, int x, int y, int w, int h, float pct, const char* l
         pctRight = x + w - RESET_SLOT_W - TS(4);
     }
 
-    char ps[8];
-    snprintf(ps, sizeof(ps), "%.0f%%", pct);
+    // A window the account doesn't have (pct < 0) reads NO LIMIT over an empty
+    // track, never a made-up 0%.
+    char ps[10] = "NO LIMIT";
+    if (pct >= 0) snprintf(ps, sizeof(ps), "%.0f%%", pct);
     g.setCursor(pctRight - (int)strlen(ps) * TS(6), y);
-    g.setTextColor(barColor(pct), C_BG);
+    g.setTextColor(pct >= 0 ? barColor(pct) : C_DIM, C_BG);
     g.print(ps);
 
     int by = y + SY(12);
@@ -757,7 +759,8 @@ void uiChartScreen(const HistSlot* slots, uint32_t newestEpoch,
     const int px0 = 10, px1 = SCREEN_W - 11, py0 = 34, py1 = SCREEN_H - 34;
 
     bool any = false;
-    for (int i = 0; i < HIST_SLOTS && !any; i++) any = slots[i].h5 != HIST_EMPTY;
+    for (int i = 0; i < HIST_SLOTS && !any; i++)
+        any = slots[i].h5 != HIST_EMPTY || slots[i].d7 != HIST_EMPTY;
     if (!any) {
         g.setTextColor(C_DIM, C_BG);
         g.setCursor((SCREEN_W - 18 * 6) / 2, 80);
@@ -928,7 +931,7 @@ void uiClockScreen(const UsageData& data, unsigned long lastFetchMs, int rssi) {
         int bx = x + 18, bw = barW;
         g.fillRect(bx, barY, bw, 8, C_BAR_BG);
         char ps[8] = "--%";
-        if (data.ok) {
+        if (data.ok && pct >= 0) {
             int fw = constrain((int)(bw * pct / 100.0f), 0, bw);
             if (fw > 0) g.fillRect(bx, barY, fw, 8, C_HEAD);
             snprintf(ps, sizeof(ps), "%.0f%%", pct);

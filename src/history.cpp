@@ -81,8 +81,8 @@ void historyRecord(const UsageData& u) {
     }
 
     HistSlot& slot = s_hist.ring[absSlot % HIST_SLOTS];
-    slot.h5 = (uint8_t)constrain((int)(u.h5 + 0.5f), 0, 100);
-    slot.d7 = (uint8_t)constrain((int)(u.d7 + 0.5f), 0, 100);
+    slot.h5 = u.h5 < 0 ? HIST_EMPTY : (uint8_t)constrain((int)(u.h5 + 0.5f), 0, 100);
+    slot.d7 = u.d7 < 0 ? HIST_EMPTY : (uint8_t)constrain((int)(u.d7 + 0.5f), 0, 100);
 
     if (absSlot != s_hist.lastAbsSlot) {
         s_hist.lastAbsSlot = absSlot;
