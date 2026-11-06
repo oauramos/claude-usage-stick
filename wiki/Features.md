@@ -4,7 +4,7 @@ What the device shows once it's on your desk. For how the layout changes per scr
 
 ## Live usage bars
 
-Two bars, one per rate-limit window: the **5-hour** and the **7-day**. They refresh on a configurable interval (30 s to 5 min) straight from the Anthropic API — see [How it works](How-It-Works). On a plan without a 5-hour limit, like verified Ultra, that bar reads `NO LIMIT`.
+Two bars, one per rate-limit window: the **5-hour** and the **7-day**. They refresh on a configurable interval (30 s to 5 min) straight from the Anthropic API — see [How it works](How-It-Works). On a plan without a 5-hour limit, like verified Ultra, Dust boards use that space for the [week's pace](The-UI#weekly-only-accounts); other boards show `NO LIMIT`.
 
 ## Reset countdowns
 

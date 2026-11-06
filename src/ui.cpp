@@ -1,6 +1,7 @@
 #include "ui.h"
 #include "config.h"
 #include "hal.h"
+#include "pace.h"
 #include <time.h>
 
 // Shared helper — no display calls, safe before any #ifdef
@@ -364,7 +365,8 @@ static void drawResetSlot(GFX& g, int barX, int barW, int y, const char* reset) 
 // and every other board renders exactly as before.
 template <class GFX>
 static void drawBar(GFX& g, int x, int y, int w, int h, float pct, const char* label,
-                    const char* reset = nullptr) {
+                    const char* reset = nullptr, bool dim = false) {
+    const uint16_t fg = (pct < 0 || dim) ? C_DIM : barColor(pct);
     g.setTextColor(C_TEXT, C_BG);
     g.setTextSize(TS(1));
     g.setCursor(x, y);
@@ -381,16 +383,24 @@ static void drawBar(GFX& g, int x, int y, int w, int h, float pct, const char* l
     char ps[10] = "NO LIMIT";
     if (pct >= 0) snprintf(ps, sizeof(ps), "%.0f%%", pct);
     g.setCursor(pctRight - (int)strlen(ps) * TS(6), y);
-    g.setTextColor(pct >= 0 ? barColor(pct) : C_DIM, C_BG);
+    g.setTextColor(fg, C_BG);
     g.print(ps);
 
     int by = y + SY(12);
     g.fillRect(x, by, w, h, C_BAR_BG);
     int fw = constrain((int)(w * pct / 100.0f), 0, w);
-    if (fw > 0) g.fillRect(x, by, fw, h, barColor(pct));
+    if (fw > 0) g.fillRect(x, by, fw, h, fg);
 }
 
 #ifdef MANGO_UI
+// Percent of the week gone when the account only has the weekly window (verified
+// Ultra), or negative otherwise. A non-negative result selects the weekly-pace
+// layout, so an unsynced clock just falls back to the regular one.
+static float weeklyOnlyElapsed(const UsageData& d) {
+    if (d.h5 >= 0 || d.d7 < 0) return USAGE_NO_WINDOW;
+    return weekElapsedPct(d.d7ResetEpoch, (uint32_t)time(nullptr));
+}
+
 static ModelStatus s_modelStatus = {true, true, true, true, false};
 
 void uiSetModelStatus(const ModelStatus& s) {
@@ -522,27 +532,39 @@ static int mascotLayout(int idx[4], int cx[4]) {
     return n;
 }
 
+// Writes the weekly forecast ("~24%", or "--" while it's too early to say) and
+// returns the color to draw it in: red once the current rate would hit the limit.
+static uint16_t forecastText(const UsageData& d, char* out, size_t len) {
+    int f = weekForecastPct(d.d7, d.d7ResetEpoch, (uint32_t)time(nullptr));
+    if (f < 0) strlcpy(out, "--", len);
+    else snprintf(out, len, "~%d%%", f);
+    return f >= 100 ? C_CRIT : C_TEXT;
+}
+
 // Size-2 countdown values — padded, opaque print overwrites in place so the
 // 10s clock tick can repaint them without clearing first.
 template <class GFX>
-static void drawResetValues(GFX& g, const char* h5rst, const char* d7rst) {
-    g.setTextColor(C_TEXT, C_BG);
+static void drawResetValues(GFX& g, const char* left, const char* d7rst,
+                            uint16_t leftColor = C_TEXT) {
     g.setTextSize(2);
+    g.setTextColor(leftColor, C_BG);
     g.setCursor(10, RESET_VAL_Y);
-    g.printf("%-8s", h5rst);
+    g.printf("%-8s", left);
+    g.setTextColor(C_TEXT, C_BG);
     g.setCursor(SCREEN_W / 2 + 10, RESET_VAL_Y);
     g.printf("%-8s", d7rst);
 }
 
 template <class GFX>
-static void drawResetRow(GFX& g, const char* h5rst, const char* d7rst) {
+static void drawResetRow(GFX& g, const char* left, const char* d7rst,
+                         const char* leftCap = "5H RESET", uint16_t leftColor = C_TEXT) {
     g.setTextColor(C_DIM, C_BG);
     g.setTextSize(1);
     g.setCursor(10, RESET_CAP_Y);
-    g.print("5H RESET");
+    g.print(leftCap);
     g.setCursor(SCREEN_W / 2 + 10, RESET_CAP_Y);
     g.print("7D RESET");
-    drawResetValues(g, h5rst, d7rst);
+    drawResetValues(g, left, d7rst, leftColor);
 }
 
 template <class GFX>
@@ -749,19 +771,26 @@ void uiChartScreen(const HistSlot* slots, uint32_t newestEpoch,
     g.setTextColor(C_DIM, C_BG);
     g.setCursor(10, 22);
     g.print("7-DAY USAGE");
-    g.setTextColor(C_HEAD, C_BG);
-    g.setCursor(SCREEN_W - 10 - 6 * 6, 22);
-    g.print("5H");
+
+    bool anyH5 = false, anyD7 = false;
+    for (int i = 0; i < HIST_SLOTS; i++) {
+        anyH5 = anyH5 || slots[i].h5 != HIST_EMPTY;
+        anyD7 = anyD7 || slots[i].d7 != HIST_EMPTY;
+    }
+
+    // No 5H in the legend once the ring holds no 5-hour samples (weekly-only accounts).
+    if (anyH5) {
+        g.setTextColor(C_HEAD, C_BG);
+        g.setCursor(SCREEN_W - 10 - 6 * 6, 22);
+        g.print("5H");
+    }
     g.setTextColor(C_HEAD_DK, C_BG);
     g.setCursor(SCREEN_W - 10 - 2 * 6, 22);
     g.print("7D");
 
     const int px0 = 10, px1 = SCREEN_W - 11, py0 = 34, py1 = SCREEN_H - 34;
 
-    bool any = false;
-    for (int i = 0; i < HIST_SLOTS && !any; i++)
-        any = slots[i].h5 != HIST_EMPTY || slots[i].d7 != HIST_EMPTY;
-    if (!any) {
+    if (!anyH5 && !anyD7) {
         g.setTextColor(C_DIM, C_BG);
         g.setCursor((SCREEN_W - 18 * 6) / 2, 80);
         g.print("collecting data...");
@@ -940,8 +969,14 @@ void uiClockScreen(const UsageData& data, unsigned long lastFetchMs, int rssi) {
         g.setCursor(bx + bw + 6, barY);
         g.print(ps);
     };
-    microBar(bar1X, "5H", data.h5);
-    microBar(bar2X, "7D", data.d7);
+    const float weekPct = weeklyOnlyElapsed(data);
+    if (weekPct >= 0) {
+        microBar(bar1X, "7D", data.d7);
+        microBar(bar2X, "WK", weekPct);
+    } else {
+        microBar(bar1X, "5H", data.h5);
+        microBar(bar2X, "7D", data.d7);
+    }
 
     UI_PUSH_DASH();
 }
@@ -1228,16 +1263,32 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
     fmtCountdown(data.d7ResetEpoch, d7rst, sizeof(d7rst));
 
 #ifdef MANGO_UI
+    // Weekly-only accounts: the freed 5-hour slots show the week's pace, with usage
+    // on top so the used and elapsed bars compare directly.
+    const float weekPct = weeklyOnlyElapsed(data);
 #ifdef BOARD_TDISPLAY_S3
     // Tier L: % flush-right on the bar rows; the countdowns get their own
     // size-2 row below the bars.
-    drawBar(g, SX(10), SY(24), barW, SY(10), data.h5, "5-HOUR");
-    drawBar(g, SX(10), SY(52), barW, SY(10), data.d7, "7-DAY");
-    drawResetRow(g, h5rst, d7rst);
+    if (weekPct >= 0) {
+        char fc[8];
+        uint16_t fcColor = forecastText(data, fc, sizeof(fc));
+        drawBar(g, SX(10), SY(24), barW, SY(10), data.d7, "7-DAY");
+        drawBar(g, SX(10), SY(52), barW, SY(10), weekPct, "WEEK ELAPSED", nullptr, true);
+        drawResetRow(g, fc, d7rst, "FORECAST", fcColor);
+    } else {
+        drawBar(g, SX(10), SY(24), barW, SY(10), data.h5, "5-HOUR");
+        drawBar(g, SX(10), SY(52), barW, SY(10), data.d7, "7-DAY");
+        drawResetRow(g, h5rst, d7rst);
+    }
 #else
     // Tier S: each reset countdown rides on its bar's label row — no room below.
-    drawBar(g, SX(10), SY(24), barW, SY(10), data.h5, "5-HOUR", h5rst);
-    drawBar(g, SX(10), SY(52), barW, SY(10), data.d7, "7-DAY",  d7rst);
+    if (weekPct >= 0) {
+        drawBar(g, SX(10), SY(24), barW, SY(10), data.d7, "7-DAY", d7rst);
+        drawBar(g, SX(10), SY(52), barW, SY(10), weekPct, "WEEK ELAPSED", nullptr, true);
+    } else {
+        drawBar(g, SX(10), SY(24), barW, SY(10), data.h5, "5-HOUR", h5rst);
+        drawBar(g, SX(10), SY(52), barW, SY(10), data.d7, "7-DAY",  d7rst);
+    }
 #endif
     drawStatusPanel(g);
 #else
@@ -1304,12 +1355,22 @@ void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi
 #ifdef MANGO_UI
 #ifdef BOARD_TDISPLAY_S3
     // Tier L: the countdowns live on their own row below the bars.
-    drawResetValues(g, h5rst, d7rst);
+    if (weeklyOnlyElapsed(data) >= 0) {
+        char fc[8];
+        uint16_t fcColor = forecastText(data, fc, sizeof(fc));
+        drawResetValues(g, fc, d7rst, fcColor);
+    } else {
+        drawResetValues(g, h5rst, d7rst);
+    }
 #else
     // Tier S: the countdowns live on the bar rows; refresh just those slots.
     int barW = SCREEN_W - SX(20);
-    drawResetSlot(g, SX(10), barW, SY(24), h5rst);
-    drawResetSlot(g, SX(10), barW, SY(52), d7rst);
+    if (weeklyOnlyElapsed(data) >= 0) {
+        drawResetSlot(g, SX(10), barW, SY(24), d7rst);   // 7-DAY is on the top row here
+    } else {
+        drawResetSlot(g, SX(10), barW, SY(24), h5rst);
+        drawResetSlot(g, SX(10), barW, SY(52), d7rst);
+    }
 #endif
 #else
     g.setTextColor(C_TEXT, C_BG);

@@ -79,11 +79,13 @@
   }
   .bar { height: 10px; background: #221c15; border-radius: 2px; overflow: hidden; }
   .bar i { display: block; height: 100%; background: var(--text); width: 0; transition: width .4s; }
+  .bar i.dim { background: var(--text-faint); }
   .resets {
     display: flex; gap: 24px; font-family: var(--font-mono); font-size: 12px;
     color: var(--text-dim); margin: 4px 0 10px;
   }
   .resets b { color: var(--text); font-size: 15px; font-weight: 500; display: block; }
+  .resets b.err { color: var(--bad); }
   .models { display: flex; gap: 18px; align-items: flex-end; }
   .model { text-align: center; }
   .model svg { display: block; margin: 0 auto 3px; }
@@ -180,16 +182,16 @@
     <h2>Usage</h2>
     <div class="screenish">
       <div class="bar-row">
-        <div class="bar-cap"><span>5-HOUR</span><span id="h5pct">--%</span></div>
-        <div class="bar"><i id="h5bar"></i></div>
+        <div class="bar-cap"><span id="row1cap">5-HOUR</span><span id="row1pct">--%</span></div>
+        <div class="bar"><i id="row1bar"></i></div>
       </div>
       <div class="bar-row">
-        <div class="bar-cap"><span>7-DAY</span><span id="d7pct">--%</span></div>
-        <div class="bar"><i id="d7bar"></i></div>
+        <div class="bar-cap"><span id="row2cap">7-DAY</span><span id="row2pct">--%</span></div>
+        <div class="bar"><i id="row2bar"></i></div>
       </div>
       <div class="resets">
-        <div>5H RESET<b id="h5rst">--</b></div>
-        <div>7D RESET<b id="d7rst">--</b></div>
+        <div><span id="rst1cap">5H RESET</span><b id="rst1">--</b></div>
+        <div>7D RESET<b id="rst2">--</b></div>
         <div style="margin-left:auto;text-align:right">FETCHED<b id="ageS">--</b></div>
       </div>
       <div class="models" id="models"></div>
@@ -412,6 +414,15 @@ function fmtCountdown(epoch, now) {
   const days = d / 86400 | 0, h = d % 86400 / 3600 | 0, m = d % 3600 / 60 | 0;
   return days > 0 ? days + 'd' + h + 'h' : h > 0 ? h + 'h' + String(m).padStart(2, '0') + 'm' : m + 'm';
 }
+/* Weekly pace, mirroring src/pace.h: the window began 7 days before its fixed reset. */
+const WEEK_SEC = 7 * 86400;
+function weekElapsed(reset, now) {
+  if (!reset || now < 1700000000) return null;
+  return Math.min(Math.max((now - (reset - WEEK_SEC)) * 100 / WEEK_SEC, 0), 100);
+}
+function weekForecast(used, elapsed) {
+  return elapsed < 100 / 7 ? null : Math.round(used * 100 / elapsed);
+}
 function fmtUptime(s) {
   const d = s / 86400 | 0, h = s % 86400 / 3600 | 0, m = s % 3600 / 60 | 0;
   return (d ? d + 'd ' : '') + h + 'h ' + m + 'm';
@@ -455,12 +466,28 @@ function render(s) {
   // A null window is one the account doesn't have (verified Ultra: no 5-hour limit).
   const pctText = v => !u.ok ? '--%' : v == null ? 'NO LIMIT' : v.toFixed(0) + '%';
   const barWidth = v => u.ok && v != null ? Math.min(v, 100) + '%' : 0;
-  $('h5pct').textContent = pctText(u.h5);
-  $('d7pct').textContent = pctText(u.d7);
-  $('h5bar').style.width = barWidth(u.h5);
-  $('d7bar').style.width = barWidth(u.d7);
-  $('h5rst').textContent = fmtCountdown(u.h5_reset, s.now);
-  $('d7rst').textContent = fmtCountdown(u.d7_reset, s.now);
+  const row = (n, cap, v) => {
+    $('row' + n + 'cap').textContent = cap;
+    $('row' + n + 'pct').textContent = pctText(v);
+    $('row' + n + 'bar').style.width = barWidth(v);
+  };
+  // Weekly-only accounts: the freed 5-hour slots show the week's pace.
+  const week = u.ok && u.h5 == null && u.d7 != null ? weekElapsed(u.d7_reset, s.now) : null;
+  const forecast = week == null ? null : weekForecast(u.d7, week);
+  if (week == null) {
+    row(1, '5-HOUR', u.h5);
+    row(2, '7-DAY', u.d7);
+    $('rst1cap').textContent = '5H RESET';
+    $('rst1').textContent = fmtCountdown(u.h5_reset, s.now);
+  } else {
+    row(1, '7-DAY', u.d7);
+    row(2, 'WEEK ELAPSED', week);
+    $('rst1cap').textContent = 'FORECAST';
+    $('rst1').textContent = forecast == null ? '--' : '~' + forecast + '%';
+  }
+  $('row2bar').classList.toggle('dim', week != null);
+  $('rst1').classList.toggle('err', forecast != null && forecast >= 100);
+  $('rst2').textContent = fmtCountdown(u.d7_reset, s.now);
   $('ageS').textContent = u.age_s != null ? u.age_s + 's ago' : '--';
   $('usageStatus').textContent = u.ok ? '' : 'fetch error: ' + (u.error || 'unknown');
   $('usageStatus').className = u.ok ? 'status' : 'status err';
