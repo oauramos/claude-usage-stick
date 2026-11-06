@@ -970,13 +970,9 @@ void uiClockScreen(const UsageData& data, unsigned long lastFetchMs, int rssi) {
         g.print(ps);
     };
     const float weekPct = weeklyOnlyElapsed(data);
-    if (weekPct >= 0) {
-        microBar(bar1X, "7D", data.d7);
-        microBar(bar2X, "WK", weekPct);
-    } else {
-        microBar(bar1X, "5H", data.h5);
-        microBar(bar2X, "7D", data.d7);
-    }
+    if (weekPct >= 0) microBar(bar1X, "WK", weekPct);
+    else microBar(bar1X, "5H", data.h5);
+    microBar(bar2X, "7D", data.d7);
 
     UI_PUSH_DASH();
 }
@@ -1263,8 +1259,8 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
     fmtCountdown(data.d7ResetEpoch, d7rst, sizeof(d7rst));
 
 #ifdef MANGO_UI
-    // Weekly-only accounts: the freed 5-hour slots show the week's pace, with usage
-    // on top so the used and elapsed bars compare directly.
+    // Weekly-only accounts: WEEK ELAPSED takes the freed 5-hour bar, so the 7-DAY
+    // bar stays where it is on every plan.
     const float weekPct = weeklyOnlyElapsed(data);
 #ifdef BOARD_TDISPLAY_S3
     // Tier L: % flush-right on the bar rows; the countdowns get their own
@@ -1272,8 +1268,8 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
     if (weekPct >= 0) {
         char fc[8];
         uint16_t fcColor = forecastText(data, fc, sizeof(fc));
-        drawBar(g, SX(10), SY(24), barW, SY(10), data.d7, "7-DAY");
-        drawBar(g, SX(10), SY(52), barW, SY(10), weekPct, "WEEK ELAPSED", nullptr, true);
+        drawBar(g, SX(10), SY(24), barW, SY(10), weekPct, "WEEK ELAPSED", nullptr, true);
+        drawBar(g, SX(10), SY(52), barW, SY(10), data.d7, "7-DAY");
         drawResetRow(g, fc, d7rst, "FORECAST", fcColor);
     } else {
         drawBar(g, SX(10), SY(24), barW, SY(10), data.h5, "5-HOUR");
@@ -1283,8 +1279,8 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
 #else
     // Tier S: each reset countdown rides on its bar's label row — no room below.
     if (weekPct >= 0) {
-        drawBar(g, SX(10), SY(24), barW, SY(10), data.d7, "7-DAY", d7rst);
-        drawBar(g, SX(10), SY(52), barW, SY(10), weekPct, "WEEK ELAPSED", nullptr, true);
+        drawBar(g, SX(10), SY(24), barW, SY(10), weekPct, "WEEK ELAPSED", nullptr, true);
+        drawBar(g, SX(10), SY(52), barW, SY(10), data.d7, "7-DAY", d7rst);
     } else {
         drawBar(g, SX(10), SY(24), barW, SY(10), data.h5, "5-HOUR", h5rst);
         drawBar(g, SX(10), SY(52), barW, SY(10), data.d7, "7-DAY",  d7rst);
@@ -1365,12 +1361,8 @@ void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi
 #else
     // Tier S: the countdowns live on the bar rows; refresh just those slots.
     int barW = SCREEN_W - SX(20);
-    if (weeklyOnlyElapsed(data) >= 0) {
-        drawResetSlot(g, SX(10), barW, SY(24), d7rst);   // 7-DAY is on the top row here
-    } else {
-        drawResetSlot(g, SX(10), barW, SY(24), h5rst);
-        drawResetSlot(g, SX(10), barW, SY(52), d7rst);
-    }
+    if (weeklyOnlyElapsed(data) < 0) drawResetSlot(g, SX(10), barW, SY(24), h5rst);
+    drawResetSlot(g, SX(10), barW, SY(52), d7rst);
 #endif
 #else
     g.setTextColor(C_TEXT, C_BG);

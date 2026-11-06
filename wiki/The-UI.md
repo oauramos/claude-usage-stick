@@ -47,10 +47,10 @@ The Mango dashboard keeps the same header and usage bars on every board, and ada
 
 *On Dust boards, when the API reports no 5-hour window, as on a verified Ultra plan. There's nothing to configure: the device works it out from the first usage reading after you unlock it, and the regular layout returns if the window comes back.*
 
-- **7-DAY** moves up to the top bar, with its reset countdown unchanged
-- **WEEK ELAPSED** takes the second bar and shows how much of the week has passed. If the 7-DAY bar is the shorter one, you're using less than an even pace
+- **WEEK ELAPSED** takes the top bar, where the 5-hour one would be, and shows how much of the week has passed. If the 7-DAY bar below it is the shorter one, you're using less than an even pace
+- **7-DAY** and its reset countdown stay where they are
 - **FORECAST** replaces the 5H reset on tier L and in the web panel. It's where usage lands at the reset if the current rate holds: `--` for the week's first 24 hours, and red from 100%
-- **Other screens** — the clock's micro bars show `7D` and `WK`, and the chart legend drops `5H` once no 5-hour samples are left
+- **Other screens** — the clock's micro bars show `WK` and `7D`, and the chart legend drops `5H` once no 5-hour samples are left
 
 ## Screens
 

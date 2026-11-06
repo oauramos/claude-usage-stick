@@ -480,12 +480,12 @@ function render(s) {
     $('rst1cap').textContent = '5H RESET';
     $('rst1').textContent = fmtCountdown(u.h5_reset, s.now);
   } else {
-    row(1, '7-DAY', u.d7);
-    row(2, 'WEEK ELAPSED', week);
+    row(1, 'WEEK ELAPSED', week);
+    row(2, '7-DAY', u.d7);
     $('rst1cap').textContent = 'FORECAST';
     $('rst1').textContent = forecast == null ? '--' : '~' + forecast + '%';
   }
-  $('row2bar').classList.toggle('dim', week != null);
+  $('row1bar').classList.toggle('dim', week != null);
   $('rst1').classList.toggle('err', forecast != null && forecast >= 100);
   $('rst2').textContent = fmtCountdown(u.d7_reset, s.now);
   $('ageS').textContent = u.age_s != null ? u.age_s + 's ago' : '--';
