@@ -452,10 +452,13 @@ function render(s) {
   $('hHost').textContent = s.hostname + '.local';
   $('hFw').textContent = 'v' + s.fw + ' · ' + s.codename;
   const u = s.usage || {};
-  $('h5pct').textContent = u.ok ? u.h5.toFixed(0) + '%' : '--%';
-  $('d7pct').textContent = u.ok ? u.d7.toFixed(0) + '%' : '--%';
-  $('h5bar').style.width = u.ok ? Math.min(u.h5, 100) + '%' : 0;
-  $('d7bar').style.width = u.ok ? Math.min(u.d7, 100) + '%' : 0;
+  // A null window is one the account doesn't have (verified Ultra: no 5-hour limit).
+  const pctText = v => !u.ok ? '--%' : v == null ? 'NO LIMIT' : v.toFixed(0) + '%';
+  const barWidth = v => u.ok && v != null ? Math.min(v, 100) + '%' : 0;
+  $('h5pct').textContent = pctText(u.h5);
+  $('d7pct').textContent = pctText(u.d7);
+  $('h5bar').style.width = barWidth(u.h5);
+  $('d7bar').style.width = barWidth(u.d7);
   $('h5rst').textContent = fmtCountdown(u.h5_reset, s.now);
   $('d7rst').textContent = fmtCountdown(u.d7_reset, s.now);
   $('ageS').textContent = u.age_s != null ? u.age_s + 's ago' : '--';
@@ -538,7 +541,7 @@ function loadHistory() {
     };
     plot(h.d7, col('--text-faint'), 1.5);
     plot(h.h5, col('--coral'), 2);
-    const any = h.h5.some(v => v != null);
+    const any = h.h5.some(v => v != null) || h.d7.some(v => v != null);
     $('histStatus').textContent = any ? '' : 'No samples yet — one per 30 min of use.';
     $('histStatus').className = 'status';
   }).catch(x => toast('histStatus', x.message));

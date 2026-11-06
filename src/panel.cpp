@@ -235,8 +235,8 @@ static void handleState() {
     JsonObject u = d["usage"].to<JsonObject>();
     u["ok"]       = g_usage.ok;
     u["error"]    = g_usage.error;
-    u["h5"]       = g_usage.h5;
-    u["d7"]       = g_usage.d7;
+    if (g_usage.h5 >= 0) u["h5"] = g_usage.h5; else u["h5"] = nullptr;
+    if (g_usage.d7 >= 0) u["d7"] = g_usage.d7; else u["d7"] = nullptr;
     u["h5_reset"] = g_usage.h5ResetEpoch;
     u["d7_reset"] = g_usage.d7ResetEpoch;
     u["age_s"]    = (millis() - g_lastFetchMs) / 1000;

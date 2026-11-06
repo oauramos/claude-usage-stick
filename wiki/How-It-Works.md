@@ -24,7 +24,9 @@ Nowhere except Anthropic. There is no backend, no telemetry, and no cloud servic
 
 ## Rate-limit headers and your plan
 
-The unified 5h/7d headers are what Claude Code subscriptions (Pro and Max) return. **Enterprise and API-billed accounts do not emit them** — the request succeeds with HTTP 200, but the headers simply aren't there, and the device can't show usage.
+The unified headers are what Claude Code subscriptions return, one set per window the account actually has. **Enterprise and API-billed accounts do not emit them** — the request succeeds with HTTP 200, but the headers simply aren't there, and the device can't show usage.
+
+**[Verified Ultra accounts have no 5-hour limit](https://support.claude.com/en/articles/11647753-how-do-usage-and-length-limits-work)**, so the API sends only the `-7d-*` headers. The device works this out from each response, with no plan setting to configure: a missing window's bar reads `NO LIMIT` and its reset reads `--`. See [Troubleshooting](Troubleshooting#the-5-hour-bar-says-no-limit).
 
 If your device reports `no_usage_h_200`, that's what happened: the token is valid, but the plan behind it doesn't publish unified usage. You need a Pro or Max token. See [Troubleshooting](Troubleshooting#the-device-shows-no_usage_h_200).
 

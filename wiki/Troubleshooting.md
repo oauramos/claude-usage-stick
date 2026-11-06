@@ -40,6 +40,12 @@ The request succeeded (HTTP 200), but the response carried **no unified usage he
 
 **Enterprise and API-billed accounts don't emit these headers.** The device needs a token from a **Claude Pro or Max** subscription. Generate one with `claude setup-token` while signed into the subscription account, then redo [setup](Setup-and-Daily-Use).
 
+### The 5-hour bar says `NO LIMIT`
+
+The API didn't report a 5-hour window for this account, which is expected on a verified Ultra plan: it [has no 5-hour limit](https://support.claude.com/en/articles/11647753-how-do-usage-and-length-limits-work), only the weekly one. Nothing is wrong and there's nothing to configure. If the window comes back, the bar returns on the next poll.
+
+Firmware older than v3.0.4 shows the same situation as a 5-hour bar stuck at 0% with an empty reset. [Update](Flashing) to fix it.
+
 ### Usage stays at 0%
 
 You genuinely haven't used any of the window yet, which is the happy case. If you have been working, check that the token belongs to the same account you're using Claude Code with.
