@@ -24,7 +24,7 @@ Two things worth knowing:
 
 | Section | What it does |
 | --- | --- |
-| **Usage** | The live dashboard mirrored in the browser — bars, reset countdowns, model mascots — plus a **Refresh now** button |
+| **Usage** | The live dashboard mirrored in the browser — bars, reset countdowns, model mascots, and the [week's pace](The-UI#weekly-only-accounts) on accounts with no 5-hour window — plus a **Refresh now** button |
 | **Device** | Firmware version, hostname, IP, WiFi signal, uptime, free heap, and whether the screen is locked |
 | **Display & refresh** | Brightness, refresh interval (30 s – 5 min), **timezone** (GMT±, feeds the clock screen and the chart's day markers), device name, flip 180° |
 | **Screens** | The [display mode](The-UI#what-dust-adds) — static / carousel / clock — carousel dwell time, which screens rotate, and which model mascots render |
