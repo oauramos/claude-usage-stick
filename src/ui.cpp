@@ -446,7 +446,7 @@ template <class GFX>
 static void drawHeaderLeft(GFX& g) {
     g.setTextColor(C_TEXT, C_HEAD);
     g.setTextSize(1);
-    g.setCursor(4, 5);
+    g.setCursor(HEADER_INSET_X, 5);
     g.printf(HDR_LEFT_FMT, (s_hdrShowUrl && s_netUrl[0]) ? s_netUrl : s_hdrLabel);
 }
 #endif // DUST_UI
@@ -724,17 +724,24 @@ static void drawHeaderRight(GFX& g, int rssi, unsigned long ago, int batPct) {
     g.setTextColor(C_TEXT, C_HEAD);
     g.setTextSize(1);
 
-    char ps[8];
-    snprintf(ps, sizeof(ps), "%d%%", batPct);
-    int x = SCREEN_W - 4 - (int)strlen(ps) * 6;
-    g.setCursor(x, 5);
-    g.print(ps);
+    int x;
+    if (batPct >= 0) {
+        char ps[8];
+        snprintf(ps, sizeof(ps), "%d%%", batPct);
+        x = SCREEN_W - HEADER_INSET_X - (int)strlen(ps) * 6;
+        g.setCursor(x, 5);
+        g.print(ps);
 
-    x -= 24;   // battery: 18 body + 2 nub + 4 gap before the text
-    g.drawRect(x, 4, 18, 10, C_TEXT);
-    g.fillRect(x + 18, 7, 2, 4, C_TEXT);
-    int fw = 14 * constrain(batPct, 0, 100) / 100;
-    if (fw > 0) g.fillRect(x + 2, 6, fw, 6, C_TEXT);
+        x -= 24;   // battery: 18 body + 2 nub + 4 gap before the text
+        g.drawRect(x, 4, 18, 10, C_TEXT);
+        g.fillRect(x + 18, 7, 2, 4, C_TEXT);
+        int fw = 14 * constrain(batPct, 0, 100) / 100;
+        if (fw > 0) g.fillRect(x + 2, 6, fw, 6, C_TEXT);
+    } else {
+        // halBatPercent() < 0: board has no battery sense — no icon, and the
+        // wifi icon moves flush to the right inset.
+        x = SCREEN_W - HEADER_INSET_X + 6;
+    }
 
     x -= 21;   // wifi: 15 wide + 6 gap
     drawWifiIcon(g, x, rssi);
@@ -1085,9 +1092,9 @@ void uiPinScreen(int pos, const int digits[4]) {
     g.fillRect(0, 0, SCREEN_W, 18, C_HEAD);
     g.setTextColor(C_TEXT, C_HEAD);
     g.setTextSize(1);
-    g.setCursor(4, 5);
+    g.setCursor(HEADER_INSET_X, 5);
     g.print("CLAUDE USAGE");
-    g.setCursor(SCREEN_W - 4 - 6 * 6, 5);
+    g.setCursor(SCREEN_W - HEADER_INSET_X - 6 * 6, 5);
     g.print("LOCKED");
     g.setTextColor(C_DIM, C_BG);
     g.setCursor((SCREEN_W - 10 * 6) / 2, boxY - 18);
