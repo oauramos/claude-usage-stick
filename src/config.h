@@ -22,6 +22,14 @@
   #define SCREEN_W              320
   #define SCREEN_H              170
   #define SCREEN_ROT            1
+  #define LAYOUT_320x170
+#elif defined(BOARD_WAVESHARE_C6_LCD)
+  // 172x320 panel used landscape. Reuses the T-Display S3's 320x170 layout;
+  // the 2 extra rows stay blank.
+  #define SCREEN_W              320
+  #define SCREEN_H              172
+  #define SCREEN_ROT            1
+  #define LAYOUT_320x170
 #elif defined(BOARD_TDISPLAY_S3_AMOLED)
   #define SCREEN_W              536
   #define SCREEN_H              240

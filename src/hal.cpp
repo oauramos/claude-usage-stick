@@ -111,6 +111,65 @@ void halFlush() {}
 
 void halClear(uint16_t color) { lcd.fillScreen(color); }
 
+#elif defined(BOARD_WAVESHARE_C6_LCD)
+
+// Waveshare ESP32-C6-LCD-1.47 (ST7789 172x320 SPI, no PSRAM, no battery).
+// The only user button is BOOT (GPIO9, active-LOW), so the two logical
+// buttons come from one: a tap = A, a hold of BTN_LONG_MS = B (fires while
+// still held, so the user feels it land). Both are momentary edges, so
+// halBtn*IsPressed() stay false and the A+B gestures (boot factory reset,
+// force refresh) are unreachable; the web panel covers both.
+// Panel, bus and backlight are configured in hal.h (LovyanGFX).
+LGFX_WaveshareC6 lcd;
+
+#define BTN_PIN      9
+#define BTN_LONG_MS  700
+#define BTN_MIN_MS   30    // debounce: shorter blips are ignored
+
+static bool btnDown = false, longFired = false;
+static unsigned long downAt = 0;
+static bool tapA = false, tapB = false;
+
+void halInit() {
+    lcd.init();   // inversion comes from the panel config
+    lcd.setBrightness(200);
+    pinMode(BTN_PIN, INPUT_PULLUP);
+}
+
+void halUpdate() {
+    // Edges last one update, like the two-button boards.
+    tapA = tapB = false;
+    bool pressed = !digitalRead(BTN_PIN);
+    unsigned long now = millis();
+    if (pressed && !btnDown) {
+        btnDown = true;
+        longFired = false;
+        downAt = now;
+    } else if (pressed && !longFired && now - downAt >= BTN_LONG_MS) {
+        longFired = true;
+        tapB = true;
+    } else if (!pressed && btnDown) {
+        btnDown = false;
+        if (!longFired && now - downAt >= BTN_MIN_MS) tapA = true;
+    }
+}
+
+bool halBtnAWasPressed() { bool r = tapA; tapA = false; return r; }
+bool halBtnBWasPressed() { bool r = tapB; tapB = false; return r; }
+bool halBtnAIsPressed()  { return false; }
+bool halBtnBIsPressed()  { return false; }
+
+int halBatPercent() { return -1; }  // USB powered, no battery sense
+
+void halSetBrightness(uint8_t level) {
+    static const uint8_t vals[] = {0, 60, 160, 255};
+    lcd.setBrightness(vals[level]);
+}
+
+void halFlush() {}
+
+void halClear(uint16_t color) { lcd.fillScreen(color); }
+
 #elif defined(BOARD_TDISPLAY_ESP32)
 
 // TTGO/LilyGo T-Display ESP32 (1.14" ST7789 135x240, 4-wire SPI).

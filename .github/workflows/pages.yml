@@ -29,6 +29,7 @@ jobs:
           - tdisplay-s3-amoled
           - tdisplay-esp32
           - esp32c3-oled
+          - waveshare-c6-lcd
     # a board that fails to build must not block the site — the page marks it "build pending"
     continue-on-error: true
     steps:

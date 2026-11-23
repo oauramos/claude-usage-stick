@@ -419,7 +419,7 @@ void uiApplyRotation(bool flipped) {
 // on the 10s clock tick. Both strings print opaque at a fixed width so each
 // phase fully covers the other without a fillRect (no flicker). The pad stops
 // short of the right cluster's worst-case extent (~x187 at 320px, ~x137 at 240px).
-#ifdef BOARD_TDISPLAY_S3
+#ifdef LAYOUT_320x170
   #define HDR_LEFT_FMT "%-28.28s"
 #else
   #define HDR_LEFT_FMT "%-21.21s"
@@ -505,7 +505,7 @@ static void drawMascot(GFX& g, int x, int y, int W, int rh, uint16_t color, bool
 // drawStatusPanel() is the board-specific entry point either way, so uiDashboard
 // just calls it.
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef LAYOUT_320x170
 // ── T-Display S3: reset row below the bars + four labelled Clawds ───────────
 // Reset countdowns get their own row under the bars; the "MODELS" divider and
 // the four mascots — each named, each blinking when healthy — fill what's left.
@@ -705,7 +705,7 @@ void uiBlinkTick(bool closed) {
     }
     UI_PUSH_DASH();
 }
-#endif // BOARD_TDISPLAY_S3 four-mascot row vs M5StickC Plus status panel
+#endif // LAYOUT_320x170 four-mascot row vs M5StickC Plus status panel
 
 template <class GFX>
 static void drawWifiIcon(GFX& g, int x, int rssi) {
@@ -883,7 +883,7 @@ void uiNewsScreen(const NewsState& news, unsigned long lastFetchMs, int rssi) {
 
     // Three items: two wrapped title lines + a date line each
     const int perLine = (SCREEN_W - 20) / 6;
-#ifdef BOARD_TDISPLAY_S3
+#ifdef LAYOUT_320x170
     const int itemY0 = 36, dateDy = 22, sepDy = 32, step = 38;
 #else
     const int itemY0 = 32, dateDy = 20, sepDy = 29, step = 32;   // 240x135
@@ -936,7 +936,7 @@ void uiClockScreen(const UsageData& data, unsigned long lastFetchMs, int rssi) {
         strlcpy(dateLine, "no time sync", sizeof(dateLine));
     }
 
-#ifdef BOARD_TDISPLAY_S3
+#ifdef LAYOUT_320x170
     const int tSz = 5, tY = 44, dY = 96, barY = 140, barW = 84, bar1X = 14, bar2X = 170;
 #else
     const int tSz = 4, tY = 38, dY = 82, barY = 116, barW = 56, bar1X = 8, bar2X = 124;
@@ -1262,7 +1262,7 @@ void uiDashboard(const UsageData& data, unsigned long lastFetchMs, int rssi, int
     // Weekly-only accounts: WEEK ELAPSED takes the freed 5-hour bar, so the 7-DAY
     // bar stays where it is on every plan.
     const float weekPct = weeklyOnlyElapsed(data);
-#ifdef BOARD_TDISPLAY_S3
+#ifdef LAYOUT_320x170
     // Tier L: % flush-right on the bar rows; the countdowns get their own
     // size-2 row below the bars.
     if (weekPct >= 0) {
@@ -1349,7 +1349,7 @@ void uiDashboardClock(const UsageData& data, unsigned long lastFetchMs, int rssi
     fmtCountdown(data.h5ResetEpoch, h5rst, sizeof(h5rst));
     fmtCountdown(data.d7ResetEpoch, d7rst, sizeof(d7rst));
 #ifdef MANGO_UI
-#ifdef BOARD_TDISPLAY_S3
+#ifdef LAYOUT_320x170
     // Tier L: the countdowns live on their own row below the bars.
     if (weeklyOnlyElapsed(data) >= 0) {
         char fc[8];

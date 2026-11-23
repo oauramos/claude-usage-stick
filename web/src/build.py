@@ -98,6 +98,16 @@ BOARDS3D = {
                + el("usbp", 11, 53, 20, 7)),
         back=el("shield", 9, 24, 24, 22) + el("usbp", 11, 53, 20, 7),
     ),
+    "waveshare-c6-lcd": dict(
+        w=44, h=104, d=10, pcb="#26221c", pcbe="#17130e",
+        front=(el("scr", 6, 10, 32, 76)
+               + el("bar", 11, 22, 22, 4) + el("bar d2", 11, 30, 14, 4)
+               + pdots(11, 66, 3, 4, 8)
+               + el("usbp", 14, 97, 16, 6)),
+        back=(el("shield", 9, 30, 26, 30) + el("antz", 9, 8, 26, 10)
+              + el("rbtn gr", 6, 84, 6, 6) + el("rbtn gr", 32, 84, 6, 6)
+              + el("usbp", 14, 97, 16, 6)),
+    ),
 }
 
 BOARDS = [
@@ -110,6 +120,7 @@ BOARDS = [
     ("tdisplay-s3-amoled", "T-Display S3 AMOLED", "ESP32-S3", '1.91&Prime; 240&times;536', ("Clarity v1", False), "ESP32-S3", "1.0.0"),
     ("tdisplay-esp32", "TTGO T-Display", "ESP32", '1.14&Prime; 135&times;240', ("Clarity v1", False), "ESP32", "1.0.0"),
     ("esp32c3-oled", "ESP32-C3-OLED", "ESP32-C3", '0.42&Prime; 72&times;40 OLED', ("Clarity v1", False), "ESP32-C3", "1.0.0"),
+    ("waveshare-c6-lcd", "Waveshare ESP32-C6-LCD-1.47", "ESP32-C6", '1.47&Prime; 320&times;172', ("&#10024; Dust &middot; tier L", True), "ESP32-C6", "3.1.0"),
 ]
 
 CLAWD_RECTS = [
@@ -266,7 +277,7 @@ HEAD_TOP = '''<!doctype html>
 '''
 
 # bootloader flash offset per chip family (partitions/boot_app0/app are the same everywhere)
-BOOTLOADER_OFFSET = {"ESP32": 0x1000, "ESP32-S2": 0x1000, "ESP32-S3": 0x0, "ESP32-C3": 0x0}
+BOOTLOADER_OFFSET = {"ESP32": 0x1000, "ESP32-S2": 0x1000, "ESP32-S3": 0x0, "ESP32-C3": 0x0, "ESP32-C6": 0x0}
 
 def manifest(env, name, chip, version):
     boot = BOOTLOADER_OFFSET[chip]

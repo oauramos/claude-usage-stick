@@ -17,6 +17,7 @@
 - [T-Display S3 AMOLED](LilyGo-T-Display-S3-AMOLED)
 - [TTGO T-Display](TTGO-T-Display-ESP32)
 - [ESP32-C3-OLED](ESP32-C3-OLED)
+- [Waveshare ESP32-C6-LCD-1.47](Waveshare-ESP32-C6-LCD-1.47)
 
 **Under the hood**
 - [Flashing](Flashing)

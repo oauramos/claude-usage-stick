@@ -1,0 +1,28 @@
+{
+  "name": "Claude Usage Stick \u2014 Waveshare ESP32-C6-LCD-1.47",
+  "version": "3.1.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C6",
+      "parts": [
+        {
+          "path": "../firmware/waveshare-c6-lcd/bootloader.bin",
+          "offset": 0
+        },
+        {
+          "path": "../firmware/waveshare-c6-lcd/partitions.bin",
+          "offset": 32768
+        },
+        {
+          "path": "../firmware/waveshare-c6-lcd/boot_app0.bin",
+          "offset": 57344
+        },
+        {
+          "path": "../firmware/waveshare-c6-lcd/firmware.bin",
+          "offset": 65536
+        }
+      ]
+    }
+  ]
+}

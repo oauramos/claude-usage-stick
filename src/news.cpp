@@ -3,6 +3,7 @@
 #ifdef DUST_UI
 
 #include <Arduino.h>
+#include <WiFiClient.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <time.h>

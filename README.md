@@ -6,7 +6,7 @@
 
 [![Web Flasher](https://img.shields.io/badge/⚡_web_flasher-flash_from_your_browser-D97757?style=flat-square)](https://oauramos.github.io/claude-usage-stick/)
 [![Wiki](https://img.shields.io/badge/docs-wiki-4c8eda?style=flat-square)](https://github.com/oauramos/claude-usage-stick/wiki)
-[![Boards](https://img.shields.io/badge/boards-8_supported-44cc11?style=flat-square)](https://github.com/oauramos/claude-usage-stick/wiki/Supported-Boards)
+[![Boards](https://img.shields.io/badge/boards-9_supported-44cc11?style=flat-square)](https://github.com/oauramos/claude-usage-stick/wiki/Supported-Boards)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
 <a href="https://oauramos.github.io/claude-usage-stick/"><img src="assets/hero.gif" width="820" alt="Claude Usage Stick — a LilyGo T-Display S3 turning slowly, its screen showing the 5-hour and 7-day usage bars, reset countdowns and the four model mascots"/></a>

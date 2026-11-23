@@ -1,6 +1,6 @@
 # Supported boards
 
-Eight boards run the firmware today. Each has its own guide with pinouts, controls, and quirks — click the name.
+Nine boards run the firmware today. Each has its own guide with pinouts, controls, and quirks — click the name.
 
 | Board | MCU | Display | Firmware | PlatformIO env | Buy |
 | ----- | --- | ------- | -------- | -------------- | --- |
@@ -12,6 +12,7 @@ Eight boards run the firmware today. Each has its own guide with pinouts, contro
 | [LilyGo T-Display S3 AMOLED 1.91"](LilyGo-T-Display-S3-AMOLED) | ESP32-S3 | 1.91" 240×536 AMOLED | Clarity (v1) | `tdisplay-s3-amoled` | [AliExpress](https://s.click.aliexpress.com/e/_c3XNB9Hx) |
 | [TTGO T-Display ESP32](TTGO-T-Display-ESP32) | ESP32 | 1.14" 135×240 LCD | Clarity (v1) | `tdisplay-esp32` | [AliExpress](https://s.click.aliexpress.com/e/_c32HlGQ1) |
 | [ESP32-C3-OLED](ESP32-C3-OLED) | ESP32-C3 | 0.42" 72×40 OLED | Clarity (v1) | `esp32c3-oled` | [AliExpress](https://s.click.aliexpress.com/e/_c3JMxywv) |
+| [Waveshare ESP32-C6-LCD-1.47](Waveshare-ESP32-C6-LCD-1.47) | ESP32-C6 | 1.47" 320×172 LCD | ✨ **Dust (v3.1.0)** · tier L | `waveshare-c6-lcd` | [waveshare.com](https://www.waveshare.com/esp32-c6-lcd-1.47.htm) |
 | M5Stack StickS3 | — | — | 🚧 in progress | — | [AliExpress](https://s.click.aliexpress.com/e/_c3ZsWHBB) |
 
 Plus any USB-C cable for flashing and power. Note that some cheap cables are **charge-only** — flashing needs a data cable.
@@ -36,6 +37,7 @@ Not every board can do everything. These limits come from the hardware, not the 
 | CrowPanel Advance 3.5" | ❌ | ❌ | Touch zones instead of buttons |
 | T-Display S3 AMOLED | varies | ✅ | Button B needs a touch-equipped variant |
 | ESP32-C3-OLED | ❌ | ✅ | You wire the buttons yourself |
+| Waveshare ESP32-C6-LCD-1.47 | ❌ | ❌ | One button (short tap / long press) |
 
 Where factory reset on boot isn't available, re-flash the board to wipe its stored credentials.
 
