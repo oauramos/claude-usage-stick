@@ -3,6 +3,13 @@
 #include "mbedtls/gcm.h"
 #include "mbedtls/sha256.h"
 #include "esp_system.h"
+// Core 3.x (IDF 5) split these out of esp_system.h
+#if __has_include("esp_mac.h")
+  #include "esp_mac.h"
+#endif
+#if __has_include("esp_random.h")
+  #include "esp_random.h"
+#endif
 #include <string.h>
 
 void deriveKey(const char* pin, const uint8_t* salt, size_t saltLen, uint8_t* keyOut32) {

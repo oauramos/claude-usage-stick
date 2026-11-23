@@ -20,6 +20,9 @@
 
 #include "hal.h"
 #include <WiFi.h>
+#if __has_include("esp_mac.h")
+  #include "esp_mac.h"   // esp_efuse_mac_get_default on core 3.x (IDF 5)
+#endif
 #include "config.h"
 #include "crypto.h"
 #include "settings.h"

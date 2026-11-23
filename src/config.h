@@ -22,6 +22,16 @@
   #define SCREEN_W              320
   #define SCREEN_H              170
   #define SCREEN_ROT            1
+  #define LAYOUT_320x170
+#elif defined(BOARD_WAVESHARE_C6_LCD)
+  // 172x320 panel used landscape. Reuses the T-Display S3's 320x170 layout;
+  // the 2 extra rows stay blank.
+  #define SCREEN_W              320
+  #define SCREEN_H              172
+  #define SCREEN_ROT            1
+  #define LAYOUT_320x170
+  // The panel's glass has large rounded corners that clip the header ends.
+  #define HEADER_INSET_X        14
 #elif defined(BOARD_TDISPLAY_S3_AMOLED)
   #define SCREEN_W              536
   #define SCREEN_H              240
@@ -44,6 +54,9 @@
   #define SCREEN_ROT            3
 #endif
 #define DEFAULT_BRIGHTNESS      2        // 0=off 1=dim 2=normal 3=bright
+#ifndef HEADER_INSET_X
+  #define HEADER_INSET_X        4        // px from each screen edge to the header text
+#endif
 
 // ── Network ──────────────────────────────────────────────
 #define WIFI_CONNECT_TIMEOUT_S  20
